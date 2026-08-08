@@ -72,9 +72,8 @@ public final class VideoPlayerViewModel: ObservableObject {
                     if self.state == .loading {
                         self.state = .ready
                         // Restore saved progress if available
-                        if let progress = PlaybackProgressStore.shared.getProgress(for: self.stream.contentID), progress > 0 {
-                            let initialTime = progress * self.duration
-                            self.seek(to: initialTime)
+                        if let record = PlaybackProgressStore.shared.getRecord(for: self.stream.contentID), !record.isCompleted {
+                            self.seek(to: record.currentTime)
                         }
                         self.play()
                     }
@@ -93,12 +92,12 @@ public final class VideoPlayerViewModel: ObservableObject {
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.state = .finished
-                self.savePlaybackProgress()
+                self.savePlaybackProgress(force: true)
             }
             .store(in: &cancellables)
         
-        // Add periodic time observer
-        let interval = CMTime(seconds: 0.5, preferredTimescale: 600)
+        // Add periodic time observer (1.0s interval)
+        let interval = CMTime(seconds: 1.0, preferredTimescale: 600)
         timeObserverToken = newPlayer.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             guard let self else { return }
             self.currentTime = time.seconds
@@ -119,7 +118,18 @@ public final class VideoPlayerViewModel: ObservableObject {
         guard let player else { return }
         player.pause()
         state = .paused
-        savePlaybackProgress()
+        savePlaybackProgress(force: true)
+    }
+    
+    public func cleanup() {
+        savePlaybackProgress(force: true)
+        if let timeObserverToken, let player {
+            player.removeTimeObserver(timeObserverToken)
+            self.timeObserverToken = nil
+        }
+        player?.pause()
+        player = nil
+        controlsTimer?.invalidate()
     }
     
     public func togglePlayPause() {
@@ -136,7 +146,7 @@ public final class VideoPlayerViewModel: ObservableObject {
         player.seek(to: cmTime) { [weak self] _ in
             guard let self else { return }
             self.currentTime = timeInSeconds
-            self.savePlaybackProgress()
+            self.savePlaybackProgress(force: true)
         }
     }
     
@@ -172,12 +182,19 @@ public final class VideoPlayerViewModel: ObservableObject {
         }
     }
     
-    private func savePlaybackProgress() {
-        PlaybackProgressStore.shared.saveProgress(
-            contentID: stream.contentID,
-            positionInSeconds: currentTime,
-            totalDurationInSeconds: duration
-        )
+    private var lastSavedTime: Double = -5.0
+    
+    private func savePlaybackProgress(force: Bool = false) {
+        guard duration > 0 else { return }
+        // Periodic throttle: save at most every 2.0s unless forced (e.g. pause, seek, finish, close)
+        if force || abs(currentTime - lastSavedTime) >= 2.0 {
+            lastSavedTime = currentTime
+            PlaybackProgressStore.shared.saveProgress(
+                contentID: stream.contentID,
+                currentTime: currentTime,
+                duration: duration
+            )
+        }
     }
     
     deinit {

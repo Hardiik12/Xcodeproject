@@ -68,7 +68,10 @@ public struct VideoPlayerView: View {
             VStack {
                 // Top Header Controls
                 HStack {
-                    Button(action: onClose) {
+                    Button(action: {
+                        viewModel.cleanup()
+                        onClose()
+                    }) {
                         Image(systemName: "xmark")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundStyle(AppColors.textPrimary)

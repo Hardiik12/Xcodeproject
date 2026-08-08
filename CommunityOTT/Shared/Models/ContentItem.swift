@@ -84,4 +84,23 @@ public struct ContentItem: Identifiable, Codable, Hashable, Sendable {
     public var subtitleMetadata: String {
         "\(category) • \(durationFormatted)"
     }
+    
+    public func withProgress(_ newProgress: Double?) -> ContentItem {
+        ContentItem(
+            id: id,
+            title: title,
+            description: description,
+            category: category,
+            type: type,
+            posterURL: posterURL,
+            bannerURL: bannerURL,
+            videoURL: videoURL,
+            durationInSeconds: durationInSeconds,
+            progress: newProgress,
+            isFeatured: isFeatured,
+            releaseYear: releaseYear,
+            language: language,
+            imageName: imageName
+        )
+    }
 }
