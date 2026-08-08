@@ -23,7 +23,7 @@ public protocol AuthServiceProtocol: Sendable {
 }
 
 public final class MockAuthService: AuthServiceProtocol, @unchecked Sendable {
-    private let statusSubject = CurrentValueSubject<AuthStatus, Never>(.unauthenticated)
+    private let statusSubject = CurrentValueSubject<AuthStatus, Never>(.guest)
     
     public init() {}
     
