@@ -50,17 +50,15 @@ public struct ContinueWatchingCardView: View {
                     
                     // Progress Bar Indicator
                     if let progress = item.progress {
-                        GeometryReader { geometry in
-                            ZStack(alignment: .leading) {
-                                Rectangle()
-                                    .fill(Color.white.opacity(0.2))
-                                
-                                Rectangle()
-                                    .fill(AppColors.primary)
-                                    .frame(width: geometry.size.width * CGFloat(progress))
-                            }
+                        ZStack(alignment: .leading) {
+                            Rectangle()
+                                .fill(Color.white.opacity(0.2))
+                            
+                            Rectangle()
+                                .fill(AppColors.primary)
+                                .frame(width: 190 * CGFloat(progress))
                         }
-                        .frame(height: 3)
+                        .frame(width: 190, height: 3)
                         .clipShape(RoundedRectangle(cornerRadius: 2))
                     }
                 }
