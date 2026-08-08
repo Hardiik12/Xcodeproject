@@ -16,10 +16,11 @@ public struct AppShellView: View {
     }
     
     public var body: some View {
-        ZStack {
+        ZStack(alignment: .top) {
             AppColors.background.ignoresSafeArea()
             
-            Group {
+            // Active Tab Content View Container (Full screen, Top Aligned)
+            ZStack(alignment: .top) {
                 switch selectedTab {
                 case .home:
                     HomeView()
@@ -33,6 +34,7 @@ public struct AppShellView: View {
                     profileTab()
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 customTabBar
             }

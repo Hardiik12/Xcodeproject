@@ -91,6 +91,7 @@ public struct HomeView: View {
                     .padding(.top, AppSpacing.xxSmall)
                     .padding(.bottom, AppSpacing.medium)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
         }
         .task {
