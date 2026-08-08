@@ -93,7 +93,7 @@ public struct VideoPlayerView: View {
                                 viewModel.selectSubtitleTrack(nil)
                             }
                             ForEach(viewModel.stream.subtitleTracks) { track in
-                                Button(track.label) {
+                                Button(track.languageName) {
                                     viewModel.selectSubtitleTrack(track)
                                 }
                             }

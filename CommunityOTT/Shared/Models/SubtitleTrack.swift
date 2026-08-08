@@ -9,14 +9,14 @@ import Foundation
 
 public struct SubtitleTrack: Identifiable, Codable, Hashable, Sendable {
     public let id: String
-    public let language: String
-    public let label: String
+    public let languageCode: String
+    public let languageName: String
     public let url: String?
     
-    public init(id: String, language: String, label: String, url: String? = nil) {
+    public init(id: String, languageCode: String, languageName: String, url: String? = nil) {
         self.id = id
-        self.language = language
-        self.label = label
+        self.languageCode = languageCode
+        self.languageName = languageName
         self.url = url
     }
 }

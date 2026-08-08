@@ -24,8 +24,8 @@ public final class MockMediaRepository: MediaRepositoryProtocol, @unchecked Send
         }
         
         let subtitles = [
-            SubtitleTrack(id: "sub-te", language: "te", label: "Telugu"),
-            SubtitleTrack(id: "sub-en", language: "en", label: "English")
+            SubtitleTrack(id: "sub-te", languageCode: "te", languageName: "Telugu"),
+            SubtitleTrack(id: "sub-en", languageCode: "en", languageName: "English")
         ]
         
         return MediaStream(
