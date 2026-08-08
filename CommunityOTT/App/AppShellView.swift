@@ -25,7 +25,7 @@ public struct AppShellView: View {
                 case .home:
                     HomeView()
                 case .discover:
-                    placeholderTab(for: .discover)
+                    DiscoverView()
                 case .search:
                     placeholderTab(for: .search)
                 case .saved:

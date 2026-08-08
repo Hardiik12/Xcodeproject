@@ -173,12 +173,54 @@ public final class MockContentRepository: ContentRepositoryProtocol, @unchecked 
         )
     ]
     
-    private let mockCategories: [ContentCategory] = [
-        ContentCategory(id: "doc", title: "Documentaries", type: .documentary),
-        ContentCategory(id: "pod", title: "Podcasts", type: .podcast),
-        ContentCategory(id: "ent", title: "Entertainment", type: .entertainment),
-        ContentCategory(id: "edu", title: "Education", type: .education),
-        ContentCategory(id: "sty", title: "Community Stories", type: .story)
+    private let empowermentItems: [ContentItem] = [
+        ContentItem(
+            id: "emp-1",
+            title: "Weaving Hope in Pochampally",
+            description: "How artisan collectives revived traditional loom weaving and created economic independence.",
+            category: "Empowerment",
+            type: .story,
+            durationInSeconds: 2700,
+            releaseYear: 2026,
+            language: "Telugu",
+            imageName: "cover_weaving"
+        ),
+        ContentItem(
+            id: "emp-2",
+            title: "Solar Sisters of Rural Telangana",
+            description: "Women engineers bringing clean renewable solar energy to off-grid villages.",
+            category: "Empowerment",
+            type: .story,
+            durationInSeconds: 2400,
+            releaseYear: 2026,
+            language: "Telugu",
+            imageName: "hero_heritage"
+        )
+    ]
+    
+    private let educationItems: [ContentItem] = [
+        ContentItem(
+            id: "edu-1",
+            title: "Digital Entrepreneurship 101",
+            description: "A comprehensive masterclass on taking traditional handicrafts to digital marketplaces.",
+            category: "Education & Skills",
+            type: .education,
+            durationInSeconds: 3600,
+            releaseYear: 2026,
+            language: "English",
+            imageName: "cover_podcast"
+        ),
+        ContentItem(
+            id: "edu-2",
+            title: "Sustainable Agriculture Masterclass",
+            description: "Organic farming techniques and water conservation for modern smallholders.",
+            category: "Education & Skills",
+            type: .education,
+            durationInSeconds: 3100,
+            releaseYear: 2026,
+            language: "Telugu",
+            imageName: "cover_weaving"
+        )
     ]
     
     public func fetchHeroItem() async throws -> ContentItem? {
@@ -208,18 +250,33 @@ public final class MockContentRepository: ContentRepositoryProtocol, @unchecked 
     
     public func fetchCategories() async throws -> [ContentCategory] {
         try await Task.sleep(nanoseconds: 150_000_000)
-        return mockCategories
+        return ContentCategory.allCategories
     }
     
     public func fetchContentByCategory(id: String) async throws -> [ContentItem] {
         try await Task.sleep(nanoseconds: 150_000_000)
-        return featuredItems + folkAndCultureItems
+        switch id {
+        case "folk_culture":
+            return folkAndCultureItems
+        case "history_docs":
+            return [heroContent] + featuredItems
+        case "empowerment":
+            return empowermentItems
+        case "voices_success":
+            return voicesOfSuccessItems
+        case "podcasts":
+            return voicesOfSuccessItems
+        case "education_skills":
+            return educationItems
+        default:
+            return featuredItems + folkAndCultureItems
+        }
     }
     
     public func searchContent(query: String) async throws -> [ContentItem] {
         try await Task.sleep(nanoseconds: 150_000_000)
         guard !query.trimmingCharacters(in: .whitespaces).isEmpty else { return [] }
-        let all = [heroContent] + continueWatchingItems + featuredItems + voicesOfSuccessItems + folkAndCultureItems
+        let all = [heroContent] + continueWatchingItems + featuredItems + voicesOfSuccessItems + folkAndCultureItems + empowermentItems + educationItems
         return all.filter {
             $0.title.localizedCaseInsensitiveContains(query) ||
             $0.description.localizedCaseInsensitiveContains(query)

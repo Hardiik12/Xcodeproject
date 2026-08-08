@@ -18,13 +18,62 @@ public enum ContentType: String, Codable, Hashable, CaseIterable, Sendable {
 public struct ContentCategory: Identifiable, Codable, Hashable, Sendable {
     public let id: String
     public let title: String
+    public let description: String
+    public let imageName: String
     public let type: ContentType
     
-    public init(id: String, title: String, type: ContentType) {
+    public init(id: String, title: String, description: String = "", imageName: String = "hero_heritage", type: ContentType = .documentary) {
         self.id = id
         self.title = title
+        self.description = description
+        self.imageName = imageName
         self.type = type
     }
+    
+    public static let allCategories: [ContentCategory] = [
+        ContentCategory(
+            id: "folk_culture",
+            title: "Folk & Cultural Arts",
+            description: "Explore traditional performances, heritage crafts, and living folk legends.",
+            imageName: "cover_folk",
+            type: .story
+        ),
+        ContentCategory(
+            id: "history_docs",
+            title: "History & Documentaries",
+            description: "Deep-dive documentaries into forgotten histories and timeless monuments.",
+            imageName: "hero_heritage",
+            type: .documentary
+        ),
+        ContentCategory(
+            id: "empowerment",
+            title: "Empowerment",
+            description: "Inspiring initiatives uplifting local communities and grassroots leaders.",
+            imageName: "cover_weaving",
+            type: .story
+        ),
+        ContentCategory(
+            id: "voices_success",
+            title: "Voices of Success",
+            description: "First-hand accounts from community leaders, innovators, and changemakers.",
+            imageName: "cover_podcast",
+            type: .story
+        ),
+        ContentCategory(
+            id: "podcasts",
+            title: "Podcasts",
+            description: "Thoughtful audio conversations and storytelling from diverse community voices.",
+            imageName: "cover_podcast",
+            type: .podcast
+        ),
+        ContentCategory(
+            id: "education_skills",
+            title: "Education & Skills",
+            description: "Practical workshops, entrepreneurial wisdom, and skill-building guides.",
+            imageName: "cover_weaving",
+            type: .education
+        )
+    ]
 }
 
 public struct ContentItem: Identifiable, Codable, Hashable, Sendable {
