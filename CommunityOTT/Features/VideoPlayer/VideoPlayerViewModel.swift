@@ -71,6 +71,11 @@ public final class VideoPlayerViewModel: ObservableObject {
                     self.duration = playerItem.duration.seconds.isFinite ? playerItem.duration.seconds : self.stream.durationInSeconds
                     if self.state == .loading {
                         self.state = .ready
+                        // Restore saved progress if available
+                        if let progress = PlaybackProgressStore.shared.getProgress(for: self.stream.contentID), progress > 0 {
+                            let initialTime = progress * self.duration
+                            self.seek(to: initialTime)
+                        }
                         self.play()
                     }
                 case .failed:
