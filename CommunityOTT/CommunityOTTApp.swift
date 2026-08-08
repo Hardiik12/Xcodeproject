@@ -11,7 +11,7 @@ import SwiftUI
 struct CommunityOTTApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            AppRootView()
         }
     }
 }
