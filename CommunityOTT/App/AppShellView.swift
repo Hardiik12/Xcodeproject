@@ -16,39 +16,69 @@ public struct AppShellView: View {
     }
     
     public var body: some View {
-        TabView(selection: $selectedTab) {
-            HomeView()
-                .tabItem {
-                    Label(TabItem.home.title, systemImage: TabItem.home.iconName)
+        ZStack(alignment: .bottom) {
+            // Main Content Area
+            Group {
+                switch selectedTab {
+                case .home:
+                    HomeView()
+                case .discover:
+                    placeholderTab(for: .discover)
+                case .search:
+                    placeholderTab(for: .search)
+                case .saved:
+                    placeholderTab(for: .saved)
+                case .profile:
+                    profileTab()
                 }
-                .tag(TabItem.home)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             
-            placeholderTab(for: .discover)
-                .tabItem {
-                    Label(TabItem.discover.title, systemImage: TabItem.discover.iconName)
-                }
-                .tag(TabItem.discover)
-            
-            placeholderTab(for: .search)
-                .tabItem {
-                    Label(TabItem.search.title, systemImage: TabItem.search.iconName)
-                }
-                .tag(TabItem.search)
-            
-            placeholderTab(for: .saved)
-                .tabItem {
-                    Label(TabItem.saved.title, systemImage: TabItem.saved.iconName)
-                }
-                .tag(TabItem.saved)
-            
-            profileTab()
-                .tabItem {
-                    Label(TabItem.profile.title, systemImage: TabItem.profile.iconName)
-                }
-                .tag(TabItem.profile)
+            // Sleek Floating Bottom Navigation Bar
+            customTabBar
         }
-        .tint(AppColors.primary)
         .preferredColorScheme(.dark)
+        .ignoresSafeArea(.keyboard, edges: .bottom)
+    }
+    
+    private var customTabBar: some View {
+        HStack(spacing: 0) {
+            ForEach(TabItem.allCases) { tab in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        selectedTab = tab
+                    }
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: tab.iconName)
+                            .font(.system(size: 20, weight: selectedTab == tab ? .bold : .regular))
+                            .foregroundStyle(selectedTab == tab ? AppColors.primary : Color.white.opacity(0.5))
+                        
+                        Text(tab.title)
+                            .font(.system(size: 10, weight: selectedTab == tab ? .semibold : .regular))
+                            .foregroundStyle(selectedTab == tab ? AppColors.primary : Color.white.opacity(0.5))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(tab.title) tab")
+            }
+        }
+        .padding(.horizontal, AppSpacing.small)
+        .padding(.vertical, AppSpacing.xSmall + 2)
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .fill(AppColors.cardSurface.opacity(0.92))
+                
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
+            }
+        )
+        .shadow(color: Color.black.opacity(0.5), radius: 12, x: 0, y: 6)
+        .padding(.horizontal, AppSpacing.medium)
+        .padding(.bottom, AppSpacing.xSmall) // Floating above bottom safe area
     }
     
     @ViewBuilder

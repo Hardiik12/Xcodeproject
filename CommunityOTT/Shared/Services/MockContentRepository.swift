@@ -19,7 +19,8 @@ public final class MockContentRepository: ContentRepositoryProtocol, @unchecked 
         durationInSeconds: 2520, // 42m
         isFeatured: true,
         releaseYear: 2026,
-        language: "Telugu"
+        language: "Telugu",
+        imageName: "hero_heritage"
     )
     
     private let continueWatchingItems: [ContentItem] = [
@@ -32,7 +33,8 @@ public final class MockContentRepository: ContentRepositoryProtocol, @unchecked 
             durationInSeconds: 2880, // 48m
             progress: 0.65, // 65% completed
             releaseYear: 2026,
-            language: "Telugu"
+            language: "Telugu",
+            imageName: "cover_weaving"
         ),
         ContentItem(
             id: "cw-2",
@@ -43,7 +45,8 @@ public final class MockContentRepository: ContentRepositoryProtocol, @unchecked 
             durationInSeconds: 2100, // 35m
             progress: 0.40, // 40% completed
             releaseYear: 2026,
-            language: "English"
+            language: "English",
+            imageName: "cover_podcast"
         ),
         ContentItem(
             id: "cw-3",
@@ -54,7 +57,8 @@ public final class MockContentRepository: ContentRepositoryProtocol, @unchecked 
             durationInSeconds: 3600, // 60m
             progress: 0.85, // 85% completed
             releaseYear: 2025,
-            language: "Telugu"
+            language: "Telugu",
+            imageName: "cover_folk"
         )
     ]
     
@@ -68,7 +72,8 @@ public final class MockContentRepository: ContentRepositoryProtocol, @unchecked 
             durationInSeconds: 3200,
             isFeatured: true,
             releaseYear: 2026,
-            language: "Telugu"
+            language: "Telugu",
+            imageName: "cover_weaving"
         ),
         ContentItem(
             id: "feat-2",
@@ -79,7 +84,8 @@ public final class MockContentRepository: ContentRepositoryProtocol, @unchecked 
             durationInSeconds: 2700,
             isFeatured: true,
             releaseYear: 2026,
-            language: "Telugu"
+            language: "Telugu",
+            imageName: "hero_heritage"
         ),
         ContentItem(
             id: "feat-3",
@@ -90,7 +96,8 @@ public final class MockContentRepository: ContentRepositoryProtocol, @unchecked 
             durationInSeconds: 3100,
             isFeatured: true,
             releaseYear: 2025,
-            language: "Telugu"
+            language: "Telugu",
+            imageName: "cover_folk"
         )
     ]
     
@@ -103,7 +110,8 @@ public final class MockContentRepository: ContentRepositoryProtocol, @unchecked 
             type: .podcast,
             durationInSeconds: 2400,
             releaseYear: 2026,
-            language: "English"
+            language: "English",
+            imageName: "cover_podcast"
         ),
         ContentItem(
             id: "vos-2",
@@ -113,7 +121,8 @@ public final class MockContentRepository: ContentRepositoryProtocol, @unchecked 
             type: .podcast,
             durationInSeconds: 1980,
             releaseYear: 2026,
-            language: "Telugu"
+            language: "Telugu",
+            imageName: "cover_weaving"
         ),
         ContentItem(
             id: "vos-3",
@@ -123,7 +132,8 @@ public final class MockContentRepository: ContentRepositoryProtocol, @unchecked 
             type: .podcast,
             durationInSeconds: 2250,
             releaseYear: 2026,
-            language: "English"
+            language: "English",
+            imageName: "hero_heritage"
         )
     ]
     
@@ -136,7 +146,8 @@ public final class MockContentRepository: ContentRepositoryProtocol, @unchecked 
             type: .entertainment,
             durationInSeconds: 4200,
             releaseYear: 2025,
-            language: "Telugu"
+            language: "Telugu",
+            imageName: "cover_folk"
         ),
         ContentItem(
             id: "fac-2",
@@ -146,7 +157,8 @@ public final class MockContentRepository: ContentRepositoryProtocol, @unchecked 
             type: .documentary,
             durationInSeconds: 2900,
             releaseYear: 2025,
-            language: "Telugu"
+            language: "Telugu",
+            imageName: "hero_heritage"
         ),
         ContentItem(
             id: "fac-3",
@@ -156,7 +168,8 @@ public final class MockContentRepository: ContentRepositoryProtocol, @unchecked 
             type: .entertainment,
             durationInSeconds: 3300,
             releaseYear: 2026,
-            language: "Telugu"
+            language: "Telugu",
+            imageName: "cover_weaving"
         )
     ]
     

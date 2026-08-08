@@ -12,77 +12,163 @@ public struct HeroBannerView: View {
     let onWatch: () -> Void
     let onMyList: () -> Void
     
-    public init(item: ContentItem, onWatch: @escaping () -> Void, onMyList: @escaping () -> Void) {
+    @State private var isVisible = false
+    
+    public init(
+        item: ContentItem,
+        onWatch: @escaping () -> Void,
+        onMyList: @escaping () -> Void
+    ) {
         self.item = item
         self.onWatch = onWatch
         self.onMyList = onMyList
     }
     
     public var body: some View {
-        ZStack(alignment: .bottom) {
-            // Hero Image Background with Cinematic Gradient Overlay
-            RoundedRectangle(cornerRadius: AppSpacing.CornerRadius.large)
-                .fill(AppColors.cardSurface)
-                .aspectRatio(16/9, contentMode: .fit)
-                .overlay(
-                    ZStack {
-                        VStack(spacing: AppSpacing.xxSmall) {
-                            Image(systemName: "film.fill")
-                                .font(.system(size: 56))
-                                .foregroundStyle(AppColors.primary.opacity(0.18))
-                            Text("HERO IMAGE")
-                                .font(AppTypography.badge)
-                                .foregroundStyle(AppColors.textMuted.opacity(0.4))
+        ZStack(alignment: .bottomLeading) {
+            // Background Image (Remote URL -> Local Asset -> Gradient Fallback)
+            GeometryReader { geometry in
+                ZStack {
+                    if let bannerURLString = item.bannerURL ?? item.posterURL,
+                       let url = URL(string: bannerURLString) {
+                        AsyncImage(url: url) { image in
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: geometry.size.width, height: geometry.size.height)
+                                .clipped()
+                        } placeholder: {
+                            heroLocalImage(width: geometry.size.width, height: geometry.size.height)
                         }
-                        
-                        AppColors.heroGradient
+                    } else {
+                        heroLocalImage(width: geometry.size.width, height: geometry.size.height)
                     }
-                )
-                .clipShape(RoundedRectangle(cornerRadius: AppSpacing.CornerRadius.large))
-            
-            // Hero Content & Inline Actions
-            VStack(spacing: AppSpacing.xSmall) {
-                Text(item.title)
-                    .font(AppTypography.heroTitle)
-                    .foregroundStyle(AppColors.textPrimary)
-                    .multilineTextAlignment(.center)
-                
-                Text(item.subtitleMetadata)
-                    .font(AppTypography.subheadline)
-                    .foregroundStyle(AppColors.textSecondary)
-                    .multilineTextAlignment(.center)
-                
-                HStack(spacing: AppSpacing.medium) {
-                    PrimaryButton(
-                        title: "Watch",
-                        iconSystemName: "play.fill",
-                        action: onWatch
-                    )
                     
-                    SecondaryButton(
-                        title: "List",
-                        iconSystemName: "plus",
-                        action: onMyList
+                    // Dark Cinematic Vignette & Gradient Overlay
+                    LinearGradient(
+                        colors: [
+                            Color.black.opacity(0.3),
+                            Color.clear,
+                            AppColors.background.opacity(0.8),
+                            AppColors.background
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
                     )
                 }
-                .padding(.horizontal, AppSpacing.medium)
+            }
+            .frame(height: 270) // Compact hero height to allow Continue Watching rail visibility
+            
+            // Hero Content Overlay
+            VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
+                // Category Badge
+                Text(item.category.uppercased())
+                    .font(AppTypography.badge)
+                    .padding(.horizontal, AppSpacing.small)
+                    .padding(.vertical, AppSpacing.xxSmall)
+                    .background(AppColors.secondary)
+                    .foregroundStyle(AppColors.textPrimary)
+                    .cornerRadius(AppSpacing.CornerRadius.small)
+                
+                // Title
+                Text(item.title)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(AppColors.textPrimary)
+                    .lineLimit(1)
+                
+                // Metadata Line
+                Text("\(item.type.rawValue.capitalized) • \(item.durationFormatted) • \(item.language)")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.textSecondary)
+                
+                // Short Description (Max 2 lines)
+                Text(item.description)
+                    .font(AppTypography.footnote)
+                    .foregroundStyle(AppColors.textSecondary.opacity(0.9))
+                    .lineLimit(2)
+                    .padding(.trailing, AppSpacing.large)
+                
+                // Action Buttons
+                HStack(spacing: AppSpacing.small) {
+                    Button(action: onWatch) {
+                        HStack(spacing: AppSpacing.xxSmall + 2) {
+                            Image(systemName: "play.fill")
+                                .font(.system(size: 14, weight: .semibold))
+                            Text("Watch")
+                                .font(AppTypography.headline)
+                        }
+                        .padding(.horizontal, AppSpacing.medium)
+                        .padding(.vertical, AppSpacing.xSmall + 2)
+                        .background(AppColors.primary)
+                        .foregroundStyle(Color.black)
+                        .cornerRadius(AppSpacing.CornerRadius.medium)
+                    }
+                    .buttonStyle(.cardPress)
+                    
+                    Button(action: onMyList) {
+                        HStack(spacing: AppSpacing.xxSmall + 2) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 14, weight: .semibold))
+                            Text("My List")
+                                .font(AppTypography.headline)
+                        }
+                        .padding(.horizontal, AppSpacing.medium)
+                        .padding(.vertical, AppSpacing.xSmall + 2)
+                        .background(AppColors.cardSurface.opacity(0.85))
+                        .foregroundStyle(AppColors.textPrimary)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AppSpacing.CornerRadius.medium)
+                                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                        )
+                        .cornerRadius(AppSpacing.CornerRadius.medium)
+                    }
+                    .buttonStyle(.cardPress)
+                }
                 .padding(.top, AppSpacing.xxSmall)
             }
-            .padding(.vertical, AppSpacing.medium)
+            .padding(.horizontal, AppSpacing.medium)
+            .padding(.bottom, AppSpacing.small)
         }
-        .padding(.horizontal, AppSpacing.medium)
+        .clipShape(RoundedRectangle(cornerRadius: AppSpacing.CornerRadius.large))
+        .padding(.horizontal, AppSpacing.small)
+        .opacity(isVisible ? 1.0 : 0.0)
+        .offset(y: isVisible ? 0 : 12)
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.4)) {
+                isVisible = true
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Hero Feature: \(item.title), \(item.category). \(item.description)")
+    }
+    
+    @ViewBuilder
+    private func heroLocalImage(width: CGFloat, height: CGFloat) -> some View {
+        if let imageName = item.imageName {
+            Image(imageName)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: width, height: height)
+                .clipped()
+        } else {
+            Image("hero_heritage")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: width, height: height)
+                .clipped()
+        }
     }
 }
 
 #Preview {
     HeroBannerView(
         item: ContentItem(
-            id: "hero",
+            id: "hero-1",
             title: "Stories of Heritage",
-            description: "Discover stories that deserve to be remembered.",
+            description: "Discover stories that deserve to be remembered. Explore deep cultural traditions and living legends.",
             category: "Documentary",
             type: .documentary,
-            durationInSeconds: 2520
+            imageName: "hero_heritage"
         ),
         onWatch: {},
         onMyList: {}

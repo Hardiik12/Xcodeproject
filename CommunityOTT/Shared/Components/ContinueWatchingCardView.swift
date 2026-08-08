@@ -21,29 +21,32 @@ public struct ContinueWatchingCardView: View {
             VStack(alignment: .leading, spacing: AppSpacing.xxSmall) {
                 // Card Media Surface
                 ZStack(alignment: .bottom) {
-                    RoundedRectangle(cornerRadius: AppSpacing.CornerRadius.medium)
-                        .fill(AppColors.cardSurface)
-                        .aspectRatio(16/9, contentMode: .fit)
-                        .overlay(
-                            ZStack {
-                                LinearGradient(
-                                    colors: [AppColors.secondary.opacity(0.4), AppColors.cardSurface],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                                
-                                Circle()
-                                    .fill(Color.black.opacity(0.5))
-                                    .frame(width: 40, height: 40)
-                                    .overlay(
-                                        Image(systemName: "play.fill")
-                                            .font(.system(size: 18))
-                                            .foregroundStyle(AppColors.primary)
-                                            .offset(x: 2)
-                                    )
-                            }
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: AppSpacing.CornerRadius.medium))
+                    ZStack {
+                        if let imageName = item.imageName {
+                            Image(imageName)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        } else {
+                            LinearGradient(
+                                colors: [AppColors.secondary.opacity(0.6), AppColors.cardSurface],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        }
+                        
+                        // Play Icon Overlay
+                        Circle()
+                            .fill(Color.black.opacity(0.45))
+                            .frame(width: 36, height: 36)
+                            .overlay(
+                                Image(systemName: "play.fill")
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(AppColors.primary)
+                                    .offset(x: 1.5)
+                            )
+                    }
+                    .frame(width: 190, height: 107) // 16:9 aspect ratio
+                    .clipShape(RoundedRectangle(cornerRadius: AppSpacing.CornerRadius.medium))
                     
                     // Progress Bar Indicator
                     if let progress = item.progress {
@@ -72,24 +75,10 @@ public struct ContinueWatchingCardView: View {
                     .foregroundStyle(AppColors.textSecondary)
                     .lineLimit(1)
             }
-            .frame(width: 200)
+            .frame(width: 190)
         }
         .buttonStyle(.cardPress)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(item.title), \(item.subtitleMetadata)")
     }
-}
-
-#Preview {
-    ContinueWatchingCardView(
-        item: ContentItem(
-            id: "1",
-            title: "Roots of Culture: Ep 3",
-            description: "Preserving ancient weaving techniques",
-            category: "Documentary",
-            type: .documentary,
-            progress: 0.65
-        ),
-        action: {}
-    )
 }

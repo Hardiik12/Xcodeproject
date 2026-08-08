@@ -14,21 +14,24 @@ public struct HomeView: View {
     public init() {}
     
     public var body: some View {
-        NavigationStack {
-            ZStack {
-                AppColors.background.ignoresSafeArea()
-                
-                if viewModel.isLoading {
-                    LoadingView(message: "Loading CommunityOTT Home...")
-                } else if let errorMsg = viewModel.errorMessage {
-                    ErrorStateView(message: errorMsg) {
-                        Task {
-                            await viewModel.loadHomeData()
-                        }
+        ZStack {
+            AppColors.background.ignoresSafeArea()
+            
+            if viewModel.isLoading {
+                LoadingView(message: "Loading CommunityOTT Home...")
+            } else if let errorMsg = viewModel.errorMessage {
+                ErrorStateView(message: errorMsg) {
+                    Task {
+                        await viewModel.loadHomeData()
                     }
-                } else {
+                }
+            } else {
+                VStack(spacing: 0) {
+                    // Compact Premium Home Header
+                    topHeaderBar
+                    
                     ScrollView(.vertical, showsIndicators: false) {
-                        VStack(spacing: AppSpacing.large) {
+                        VStack(spacing: AppSpacing.medium) {
                             // Cinematic Hero Banner
                             if let hero = viewModel.heroItem {
                                 HeroBannerView(
@@ -38,14 +41,14 @@ public struct HomeView: View {
                                     },
                                     onMyList: {}
                                 )
-                                .padding(.top, AppSpacing.xSmall)
+                                .padding(.top, AppSpacing.xxSmall)
                             }
                             
-                            // Rail 1: Continue Watching
+                            // Rail 1: Continue Watching (High Priority Initial Viewport Visibility)
                             if !viewModel.continueWatching.isEmpty {
                                 ContentRailView(
                                     title: "Continue Watching",
-                                    subtitle: "Pick up where you left off",
+                                    subtitle: nil,
                                     items: viewModel.continueWatching,
                                     variant: .continueWatching,
                                     onSelect: { item in
@@ -87,30 +90,49 @@ public struct HomeView: View {
                                 }
                             )
                         }
-                        .padding(.bottom, AppSpacing.xxLarge + 32) // Safe padding to prevent bottom tab occlusion
+                        .padding(.bottom, 100) // Clear inset so bottom tab bar never obscures final rail
                     }
                 }
-            }
-            .navigationTitle("CommunityOTT")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        // Notifications action
-                    } label: {
-                        Image(systemName: "bell.fill")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(AppColors.primary)
-                    }
-                    .accessibilityLabel("Notifications")
-                }
-            }
-            .task {
-                await viewModel.loadHomeData()
-            }
-            .sheet(item: $selectedItem) { item in
-                ContentDetailSheet(item: item)
             }
         }
+        .task {
+            await viewModel.loadHomeData()
+        }
+        .sheet(item: $selectedItem) { item in
+            ContentDetailSheet(item: item)
+        }
+    }
+    
+    private var topHeaderBar: some View {
+        HStack {
+            HStack(spacing: 4) {
+                Text("Community")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(AppColors.textPrimary)
+                
+                Text("OTT")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(AppColors.primary)
+            }
+            
+            Spacer()
+            
+            Button {
+                // Notification action
+            } label: {
+                Image(systemName: "bell.fill")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(AppColors.primary)
+                    .padding(8)
+                    .background(AppColors.cardSurface)
+                    .clipShape(Circle())
+            }
+            .accessibilityLabel("Notifications")
+        }
+        .padding(.horizontal, AppSpacing.medium)
+        .padding(.top, AppSpacing.xSmall)
+        .padding(.bottom, AppSpacing.xxSmall)
+        .background(AppColors.background)
     }
 }
 

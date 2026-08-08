@@ -21,23 +21,21 @@ public struct LandscapeCardView: View {
             VStack(alignment: .leading, spacing: AppSpacing.xxSmall) {
                 // 16:9 Landscape Card Surface
                 ZStack(alignment: .bottomTrailing) {
-                    RoundedRectangle(cornerRadius: AppSpacing.CornerRadius.medium)
-                        .fill(AppColors.cardSurface)
-                        .aspectRatio(16/9, contentMode: .fit)
-                        .overlay(
-                            ZStack {
-                                LinearGradient(
-                                    colors: [AppColors.secondary, AppColors.cardSurface],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                                
-                                Image(systemName: "sparkles.tv")
-                                    .font(.system(size: 32))
-                                    .foregroundStyle(AppColors.primary.opacity(0.4))
-                            }
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: AppSpacing.CornerRadius.medium))
+                    ZStack {
+                        if let imageName = item.imageName {
+                            Image(imageName)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        } else {
+                            LinearGradient(
+                                colors: [AppColors.secondary, AppColors.cardSurface],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        }
+                    }
+                    .frame(width: 190, height: 107) // 16:9 aspect ratio
+                    .clipShape(RoundedRectangle(cornerRadius: AppSpacing.CornerRadius.medium))
                     
                     Text(item.durationFormatted)
                         .font(AppTypography.badge)
@@ -59,23 +57,10 @@ public struct LandscapeCardView: View {
                     .foregroundStyle(AppColors.textSecondary)
                     .lineLimit(1)
             }
-            .frame(width: 200)
+            .frame(width: 190)
         }
         .buttonStyle(.cardPress)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(item.title), \(item.category)")
     }
-}
-
-#Preview {
-    LandscapeCardView(
-        item: ContentItem(
-            id: "fac-1",
-            title: "Sacred Rhythms",
-            description: "Folk performance",
-            category: "Folk & Culture",
-            type: .entertainment
-        ),
-        action: {}
-    )
 }

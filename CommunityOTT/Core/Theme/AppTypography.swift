@@ -14,6 +14,7 @@ public enum AppTypography {
     public static let headline = Font.system(size: 16, weight: .semibold, design: .default)
     public static let body = Font.system(size: 14, weight: .regular, design: .default)
     public static let subheadline = Font.system(size: 13, weight: .medium, design: .default)
+    public static let footnote = Font.system(size: 13, weight: .regular, design: .default)
     public static let caption = Font.system(size: 12, weight: .regular, design: .default)
     public static let badge = Font.system(size: 10, weight: .bold, design: .default)
 }

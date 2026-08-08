@@ -21,29 +21,21 @@ public struct PodcastCardView: View {
             VStack(alignment: .leading, spacing: AppSpacing.xxSmall) {
                 // 1:1 Square Podcast Artwork
                 ZStack(alignment: .bottomLeading) {
-                    RoundedRectangle(cornerRadius: AppSpacing.CornerRadius.medium)
-                        .fill(AppColors.cardSurface)
-                        .aspectRatio(1/1, contentMode: .fit)
-                        .overlay(
-                            ZStack {
-                                LinearGradient(
-                                    colors: [AppColors.primary.opacity(0.3), AppColors.secondary],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                                
-                                VStack(spacing: AppSpacing.xxSmall) {
-                                    Image(systemName: "mic.fill")
-                                        .font(.system(size: 32))
-                                        .foregroundStyle(AppColors.primary)
-                                    
-                                    Image(systemName: "waveform")
-                                        .font(.system(size: 16))
-                                        .foregroundStyle(AppColors.textSecondary.opacity(0.7))
-                                }
-                            }
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: AppSpacing.CornerRadius.medium))
+                    ZStack {
+                        if let imageName = item.imageName {
+                            Image(imageName)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        } else {
+                            LinearGradient(
+                                colors: [AppColors.primary.opacity(0.3), AppColors.secondary],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        }
+                    }
+                    .frame(width: 135, height: 135) // 1:1 aspect ratio
+                    .clipShape(RoundedRectangle(cornerRadius: AppSpacing.CornerRadius.medium))
                     
                     Text("PODCAST")
                         .font(AppTypography.badge)
@@ -65,23 +57,10 @@ public struct PodcastCardView: View {
                     .foregroundStyle(AppColors.textSecondary)
                     .lineLimit(1)
             }
-            .frame(width: 140)
+            .frame(width: 135)
         }
         .buttonStyle(.cardPress)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Podcast: \(item.title), duration \(item.durationFormatted)")
     }
-}
-
-#Preview {
-    PodcastCardView(
-        item: ContentItem(
-            id: "vos-1",
-            title: "Grassroots Founder",
-            description: "Podcast episode",
-            category: "Podcast",
-            type: .podcast
-        ),
-        action: {}
-    )
 }

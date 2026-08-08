@@ -29,10 +29,10 @@ public enum TabItem: String, CaseIterable, Identifiable, Sendable {
     public var iconName: String {
         switch self {
         case .home: return "house.fill"
-        case .discover: return "compass.drawing"
+        case .discover: return "safari.fill"
         case .search: return "magnifyingglass"
         case .saved: return "bookmark.fill"
-        case .profile: return "person.crop.circle.fill"
+        case .profile: return "person.fill"
         }
     }
 }

@@ -21,31 +21,21 @@ public struct PosterCardView: View {
             VStack(alignment: .leading, spacing: AppSpacing.xxSmall) {
                 // 2:3 Vertical Poster Card Surface
                 ZStack(alignment: .topTrailing) {
-                    RoundedRectangle(cornerRadius: AppSpacing.CornerRadius.medium)
-                        .fill(AppColors.cardSurface)
-                        .aspectRatio(2/3, contentMode: .fit)
-                        .overlay(
-                            ZStack {
-                                LinearGradient(
-                                    colors: [AppColors.secondary.opacity(0.6), AppColors.elevatedCard],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                                
-                                VStack(spacing: AppSpacing.xSmall) {
-                                    Image(systemName: "film.fill")
-                                        .font(.system(size: 36))
-                                        .foregroundStyle(AppColors.primary.opacity(0.8))
-                                    
-                                    Text(item.title)
-                                        .font(AppTypography.caption)
-                                        .foregroundStyle(AppColors.textPrimary)
-                                        .multilineTextAlignment(.center)
-                                        .padding(.horizontal, AppSpacing.xSmall)
-                                }
-                            }
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: AppSpacing.CornerRadius.medium))
+                    ZStack {
+                        if let imageName = item.imageName {
+                            Image(imageName)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        } else {
+                            LinearGradient(
+                                colors: [AppColors.secondary.opacity(0.6), AppColors.elevatedCard],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        }
+                    }
+                    .frame(width: 135, height: 202) // 2:3 aspect ratio
+                    .clipShape(RoundedRectangle(cornerRadius: AppSpacing.CornerRadius.medium))
                     
                     // Language Badge
                     Text(item.language)
@@ -68,24 +58,10 @@ public struct PosterCardView: View {
                     .foregroundStyle(AppColors.textSecondary)
                     .lineLimit(1)
             }
-            .frame(width: 140)
+            .frame(width: 135)
         }
         .buttonStyle(.cardPress)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(item.title), \(item.category), \(item.language)")
     }
-}
-
-#Preview {
-    PosterCardView(
-        item: ContentItem(
-            id: "1",
-            title: "Weavers of Pochampally",
-            description: "Ikat heritage",
-            category: "Documentary",
-            type: .documentary,
-            language: "Telugu"
-        ),
-        action: {}
-    )
 }
