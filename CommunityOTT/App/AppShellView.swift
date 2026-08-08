@@ -29,7 +29,11 @@ public struct AppShellView: View {
                 case .search:
                     placeholderTab(for: .search)
                 case .saved:
-                    placeholderTab(for: .saved)
+                    SavedView {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedTab = .discover
+                        }
+                    }
                 case .profile:
                     profileTab()
                 }

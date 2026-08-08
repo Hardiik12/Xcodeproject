@@ -21,6 +21,8 @@ public final class ContentDetailsViewModel: ObservableObject {
     private let mediaRepository: MediaRepositoryProtocol
     private let contentRepository: ContentRepositoryProtocol
     
+    private var cancellables = Set<AnyCancellable>()
+    
     public init(
         item: ContentItem,
         mediaRepository: MediaRepositoryProtocol = MockMediaRepository(),
@@ -29,6 +31,15 @@ public final class ContentDetailsViewModel: ObservableObject {
         self.item = item
         self.mediaRepository = mediaRepository
         self.contentRepository = contentRepository
+        
+        // Subscribe to SavedContentStore for live updates
+        SavedContentStore.shared.$savedIDs
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] savedSet in
+                guard let self = self else { return }
+                self.isSavedToList = savedSet.contains(self.item.id)
+            }
+            .store(in: &cancellables)
     }
     
     public func loadDetails() async {
@@ -50,6 +61,6 @@ public final class ContentDetailsViewModel: ObservableObject {
     }
     
     public func toggleMyList() {
-        isSavedToList.toggle()
+        SavedContentStore.shared.toggleSave(contentID: item.id)
     }
 }

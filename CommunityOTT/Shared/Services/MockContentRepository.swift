@@ -273,6 +273,13 @@ public final class MockContentRepository: ContentRepositoryProtocol, @unchecked 
         }
     }
     
+    public func fetchContentByIDs(ids: Set<String>) async throws -> [ContentItem] {
+        try await Task.sleep(nanoseconds: 150_000_000)
+        guard !ids.isEmpty else { return [] }
+        let all = [heroContent] + continueWatchingItems + featuredItems + voicesOfSuccessItems + folkAndCultureItems + empowermentItems + educationItems
+        return all.filter { ids.contains($0.id) }
+    }
+    
     public func searchContent(query: String) async throws -> [ContentItem] {
         try await Task.sleep(nanoseconds: 150_000_000)
         guard !query.trimmingCharacters(in: .whitespaces).isEmpty else { return [] }
