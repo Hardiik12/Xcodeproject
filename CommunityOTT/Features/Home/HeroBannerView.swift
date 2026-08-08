@@ -20,42 +20,37 @@ public struct HeroBannerView: View {
     
     public var body: some View {
         ZStack(alignment: .bottom) {
-            // Background Surface with Gradient Overlay
+            // Hero Image Background with Cinematic Gradient Overlay
             RoundedRectangle(cornerRadius: AppSpacing.CornerRadius.large)
                 .fill(AppColors.cardSurface)
                 .aspectRatio(16/9, contentMode: .fit)
                 .overlay(
                     ZStack {
-                        Image(systemName: "film.fill")
-                            .font(.system(size: 64))
-                            .foregroundStyle(AppColors.primary.opacity(0.15))
+                        VStack(spacing: AppSpacing.xxSmall) {
+                            Image(systemName: "film.fill")
+                                .font(.system(size: 56))
+                                .foregroundStyle(AppColors.primary.opacity(0.18))
+                            Text("HERO IMAGE")
+                                .font(AppTypography.badge)
+                                .foregroundStyle(AppColors.textMuted.opacity(0.4))
+                        }
                         
                         AppColors.heroGradient
                     }
                 )
                 .clipShape(RoundedRectangle(cornerRadius: AppSpacing.CornerRadius.large))
             
-            // Hero Content & Controls
-            VStack(spacing: AppSpacing.small) {
-                Text(item.category.uppercased())
-                    .font(AppTypography.badge)
-                    .foregroundStyle(AppColors.primary)
-                    .padding(.horizontal, AppSpacing.small)
-                    .padding(.vertical, AppSpacing.xxSmall)
-                    .background(AppColors.secondary.opacity(0.8))
-                    .cornerRadius(AppSpacing.CornerRadius.small)
-                
+            // Hero Content & Inline Actions
+            VStack(spacing: AppSpacing.xSmall) {
                 Text(item.title)
                     .font(AppTypography.heroTitle)
                     .foregroundStyle(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                 
-                Text(item.description)
-                    .font(AppTypography.body)
+                Text(item.subtitleMetadata)
+                    .font(AppTypography.subheadline)
                     .foregroundStyle(AppColors.textSecondary)
                     .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .padding(.horizontal, AppSpacing.medium)
                 
                 HStack(spacing: AppSpacing.medium) {
                     PrimaryButton(
@@ -65,13 +60,13 @@ public struct HeroBannerView: View {
                     )
                     
                     SecondaryButton(
-                        title: "My List",
+                        title: "List",
                         iconSystemName: "plus",
                         action: onMyList
                     )
                 }
                 .padding(.horizontal, AppSpacing.medium)
-                .padding(.top, AppSpacing.xSmall)
+                .padding(.top, AppSpacing.xxSmall)
             }
             .padding(.vertical, AppSpacing.medium)
         }
@@ -83,10 +78,11 @@ public struct HeroBannerView: View {
     HeroBannerView(
         item: ContentItem(
             id: "hero",
-            title: "Stories of Our Heritage",
+            title: "Stories of Heritage",
             description: "Discover stories that deserve to be remembered.",
-            category: "Featured Documentary",
-            type: .documentary
+            category: "Documentary",
+            type: .documentary,
+            durationInSeconds: 2520
         ),
         onWatch: {},
         onMyList: {}

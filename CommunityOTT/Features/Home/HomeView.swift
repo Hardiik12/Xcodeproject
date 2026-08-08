@@ -38,7 +38,7 @@ public struct HomeView: View {
                                     },
                                     onMyList: {}
                                 )
-                                .padding(.top, AppSpacing.small)
+                                .padding(.top, AppSpacing.xSmall)
                             }
                             
                             // Rail 1: Continue Watching
@@ -47,47 +47,63 @@ public struct HomeView: View {
                                     title: "Continue Watching",
                                     subtitle: "Pick up where you left off",
                                     items: viewModel.continueWatching,
+                                    variant: .continueWatching,
                                     onSelect: { item in
                                         selectedItem = item
                                     }
                                 )
                             }
                             
-                            // Rail 2: Featured
+                            // Rail 2: Featured (Poster Cards)
                             ContentRailView(
                                 title: "Featured",
                                 subtitle: "Curated cultural releases",
                                 items: viewModel.featuredItems,
+                                variant: .poster,
                                 onSelect: { item in
                                     selectedItem = item
                                 }
                             )
                             
-                            // Rail 3: Voices of Success
+                            // Rail 3: Voices of Success (Square Podcast Cards)
                             ContentRailView(
                                 title: "Voices of Success",
                                 subtitle: "Podcasts & Community Leaders",
                                 items: viewModel.voicesOfSuccess,
+                                variant: .podcast,
                                 onSelect: { item in
                                     selectedItem = item
                                 }
                             )
                             
-                            // Rail 4: Folk & Culture
+                            // Rail 4: Folk & Culture (Landscape Cards)
                             ContentRailView(
                                 title: "Folk & Culture",
                                 subtitle: "Documentaries & Heritage Traditions",
                                 items: viewModel.folkAndCulture,
+                                variant: .landscape,
                                 onSelect: { item in
                                     selectedItem = item
                                 }
                             )
                         }
-                        .padding(.bottom, AppSpacing.xxLarge)
+                        .padding(.bottom, AppSpacing.xxLarge + 32) // Safe padding to prevent bottom tab occlusion
                     }
                 }
             }
             .navigationTitle("CommunityOTT")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        // Notifications action
+                    } label: {
+                        Image(systemName: "bell.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(AppColors.primary)
+                    }
+                    .accessibilityLabel("Notifications")
+                }
+            }
             .task {
                 await viewModel.loadHomeData()
             }
@@ -115,6 +131,10 @@ private struct ContentDetailSheet: View {
                     Text(item.title)
                         .font(AppTypography.title1)
                         .foregroundStyle(AppColors.textPrimary)
+                    
+                    Text(item.subtitleMetadata)
+                        .font(AppTypography.subheadline)
+                        .foregroundStyle(AppColors.textSecondary)
                     
                     Text(item.description)
                         .font(AppTypography.body)

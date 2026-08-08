@@ -37,9 +37,11 @@ public struct ContentItem: Identifiable, Codable, Hashable, Sendable {
     public let bannerURL: String?
     public let videoURL: String?
     public let durationInSeconds: Int?
+    public let progress: Double? // 0.0 to 1.0 for Continue Watching
     public let isFeatured: Bool
     public let releaseYear: Int
     public let language: String
+    public let imageName: String?
     
     public init(
         id: String,
@@ -50,10 +52,12 @@ public struct ContentItem: Identifiable, Codable, Hashable, Sendable {
         posterURL: String? = nil,
         bannerURL: String? = nil,
         videoURL: String? = nil,
-        durationInSeconds: Int? = nil,
+        durationInSeconds: Int? = 2520, // default 42m
+        progress: Double? = nil,
         isFeatured: Bool = false,
         releaseYear: Int = 2026,
-        language: String = "English"
+        language: String = "English",
+        imageName: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -64,8 +68,20 @@ public struct ContentItem: Identifiable, Codable, Hashable, Sendable {
         self.bannerURL = bannerURL
         self.videoURL = videoURL
         self.durationInSeconds = durationInSeconds
+        self.progress = progress
         self.isFeatured = isFeatured
         self.releaseYear = releaseYear
         self.language = language
+        self.imageName = imageName
+    }
+    
+    public var durationFormatted: String {
+        guard let durationInSeconds else { return "42m" }
+        let minutes = durationInSeconds / 60
+        return "\(minutes)m"
+    }
+    
+    public var subtitleMetadata: String {
+        "\(category) • \(durationFormatted)"
     }
 }

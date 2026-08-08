@@ -8,88 +8,154 @@
 import Foundation
 
 public final class MockContentRepository: ContentRepositoryProtocol, @unchecked Sendable {
-    public init() {}
+    nonisolated public init() {}
     
     private let heroContent = ContentItem(
         id: "hero-1",
-        title: "Stories of Our Heritage",
-        description: "Discover stories that deserve to be remembered. Explore deep cultural traditions and living legacies.",
-        category: "Featured Documentary",
+        title: "Stories of Heritage",
+        description: "Discover stories that deserve to be remembered. Explore deep cultural traditions, living legends, and rural heritage.",
+        category: "Documentary",
         type: .documentary,
+        durationInSeconds: 2520, // 42m
         isFeatured: true,
         releaseYear: 2026,
         language: "Telugu"
     )
     
-    private let mockItems: [ContentItem] = [
+    private let continueWatchingItems: [ContentItem] = [
         ContentItem(
-            id: "1",
-            title: "Roots of Culture",
-            description: "A rich documentary exploring local traditions, folklore, and heritage preservation.",
-            category: "Documentaries",
+            id: "cw-1",
+            title: "Roots of Culture: Ep 3",
+            description: "Preserving ancient weaving techniques and craft secrets.",
+            category: "Documentary",
             type: .documentary,
+            durationInSeconds: 2880, // 48m
+            progress: 0.65, // 65% completed
+            releaseYear: 2026,
+            language: "Telugu"
+        ),
+        ContentItem(
+            id: "cw-2",
+            title: "Voices of Tomorrow: Ep 7",
+            description: "Empowering rural youth through digital storytelling.",
+            category: "Podcast",
+            type: .podcast,
+            durationInSeconds: 2100, // 35m
+            progress: 0.40, // 40% completed
+            releaseYear: 2026,
+            language: "English"
+        ),
+        ContentItem(
+            id: "cw-3",
+            title: "Folk Traditions Live",
+            description: "Traditional temple music and folk dance celebrations.",
+            category: "Folk & Culture",
+            type: .entertainment,
+            durationInSeconds: 3600, // 60m
+            progress: 0.85, // 85% completed
+            releaseYear: 2025,
+            language: "Telugu"
+        )
+    ]
+    
+    private let featuredItems: [ContentItem] = [
+        ContentItem(
+            id: "feat-1",
+            title: "The Weavers of Pochampally",
+            description: "An epic journey into world-famous ikat art.",
+            category: "Documentary",
+            type: .documentary,
+            durationInSeconds: 3200,
             isFeatured: true,
             releaseYear: 2026,
             language: "Telugu"
         ),
         ContentItem(
-            id: "2",
-            title: "Voices of Tomorrow",
-            description: "Inspiring podcasts featuring community leaders, artisans, and innovators.",
-            category: "Podcasts",
-            type: .podcast,
-            isFeatured: true,
-            releaseYear: 2026,
-            language: "English"
-        ),
-        ContentItem(
-            id: "3",
-            title: "Village Chronicles",
-            description: "Heartwarming community stories showcasing grassroots empowerment.",
+            id: "feat-2",
+            title: "Unsung Heroes",
+            description: "Grassroots innovators changing village lives.",
             category: "Stories",
             type: .story,
-            isFeatured: false,
-            releaseYear: 2025,
-            language: "Telugu"
-        ),
-        ContentItem(
-            id: "4",
-            title: "Heritage Rhythms",
-            description: "Cultural music and artistic performances recorded live.",
-            category: "Entertainment",
-            type: .entertainment,
+            durationInSeconds: 2700,
             isFeatured: true,
             releaseYear: 2026,
             language: "Telugu"
         ),
         ContentItem(
-            id: "5",
-            title: "Craft & Skill Masterclass",
-            description: "Educational modules empowering rural and urban youth.",
-            category: "Education",
-            type: .education,
-            isFeatured: false,
+            id: "feat-3",
+            title: "Echoes of the River",
+            description: "Exploring coastal traditions along the Godavari.",
+            category: "Documentary",
+            type: .documentary,
+            durationInSeconds: 3100,
+            isFeatured: true,
+            releaseYear: 2025,
+            language: "Telugu"
+        )
+    ]
+    
+    private let voicesOfSuccessItems: [ContentItem] = [
+        ContentItem(
+            id: "vos-1",
+            title: "Grassroots Founder Podcast",
+            description: "How a local artisan built an international brand.",
+            category: "Podcast",
+            type: .podcast,
+            durationInSeconds: 2400,
             releaseYear: 2026,
             language: "English"
         ),
         ContentItem(
-            id: "6",
-            title: "Grassroots Innovators",
-            description: "Entrepreneurs shaping local economies and sustainable development.",
-            category: "Success Stories",
-            type: .story,
-            isFeatured: true,
+            id: "vos-2",
+            title: "Agri-Tech Pioneers",
+            description: "Farming innovation and community empowerment.",
+            category: "Podcast",
+            type: .podcast,
+            durationInSeconds: 1980,
             releaseYear: 2026,
             language: "Telugu"
         ),
         ContentItem(
-            id: "7",
-            title: "Sacred Echoes",
-            description: "Ancient folk songs, oral histories, and temple celebrations.",
+            id: "vos-3",
+            title: "Women of Enterprise",
+            description: "Stories of female leadership in rural cooperatives.",
+            category: "Podcast",
+            type: .podcast,
+            durationInSeconds: 2250,
+            releaseYear: 2026,
+            language: "English"
+        )
+    ]
+    
+    private let folkAndCultureItems: [ContentItem] = [
+        ContentItem(
+            id: "fac-1",
+            title: "Sacred Rhythms of Telangana",
+            description: "Live recordings of classical and folk percussions.",
             category: "Folk & Culture",
-            type: .documentary,
-            isFeatured: true,
+            type: .entertainment,
+            durationInSeconds: 4200,
             releaseYear: 2025,
+            language: "Telugu"
+        ),
+        ContentItem(
+            id: "fac-2",
+            title: "Shadow Puppetry Legends",
+            description: "The ancient art of Tholu Bommalata.",
+            category: "Heritage",
+            type: .documentary,
+            durationInSeconds: 2900,
+            releaseYear: 2025,
+            language: "Telugu"
+        ),
+        ContentItem(
+            id: "fac-3",
+            title: "Harvest Songs & Tales",
+            description: "Celebrations of seasonal traditions.",
+            category: "Folk & Culture",
+            type: .entertainment,
+            durationInSeconds: 3300,
+            releaseYear: 2026,
             language: "Telugu"
         )
     ]
@@ -108,23 +174,23 @@ public final class MockContentRepository: ContentRepositoryProtocol, @unchecked 
     }
     
     public func fetchFeaturedContent() async throws -> [ContentItem] {
-        try await Task.sleep(nanoseconds: 200_000_000)
-        return mockItems.filter { $0.isFeatured }
+        try await Task.sleep(nanoseconds: 150_000_000)
+        return featuredItems
     }
     
     public func fetchContinueWatching() async throws -> [ContentItem] {
         try await Task.sleep(nanoseconds: 150_000_000)
-        return Array(mockItems.prefix(3))
+        return continueWatchingItems
     }
     
     public func fetchVoicesOfSuccess() async throws -> [ContentItem] {
-        try await Task.sleep(nanoseconds: 200_000_000)
-        return mockItems.filter { $0.type == .podcast || $0.type == .story || $0.category == "Success Stories" }
+        try await Task.sleep(nanoseconds: 150_000_000)
+        return voicesOfSuccessItems
     }
     
     public func fetchFolkAndCulture() async throws -> [ContentItem] {
-        try await Task.sleep(nanoseconds: 200_000_000)
-        return mockItems.filter { $0.type == .documentary || $0.category == "Folk & Culture" || $0.type == .entertainment }
+        try await Task.sleep(nanoseconds: 150_000_000)
+        return folkAndCultureItems
     }
     
     public func fetchCategories() async throws -> [ContentCategory] {
@@ -133,14 +199,15 @@ public final class MockContentRepository: ContentRepositoryProtocol, @unchecked 
     }
     
     public func fetchContentByCategory(id: String) async throws -> [ContentItem] {
-        try await Task.sleep(nanoseconds: 200_000_000)
-        return mockItems
+        try await Task.sleep(nanoseconds: 150_000_000)
+        return featuredItems + folkAndCultureItems
     }
     
     public func searchContent(query: String) async throws -> [ContentItem] {
-        try await Task.sleep(nanoseconds: 200_000_000)
+        try await Task.sleep(nanoseconds: 150_000_000)
         guard !query.trimmingCharacters(in: .whitespaces).isEmpty else { return [] }
-        return mockItems.filter {
+        let all = [heroContent] + continueWatchingItems + featuredItems + voicesOfSuccessItems + folkAndCultureItems
+        return all.filter {
             $0.title.localizedCaseInsensitiveContains(query) ||
             $0.description.localizedCaseInsensitiveContains(query)
         }

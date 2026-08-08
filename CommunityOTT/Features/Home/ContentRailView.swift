@@ -7,10 +7,18 @@
 
 import SwiftUI
 
+public enum RailVariant {
+    case continueWatching
+    case poster
+    case podcast
+    case landscape
+}
+
 public struct ContentRailView: View {
     let title: String
     let subtitle: String?
     let items: [ContentItem]
+    let variant: RailVariant
     let onSelect: (ContentItem) -> Void
     let onSeeAll: (() -> Void)?
     
@@ -18,12 +26,14 @@ public struct ContentRailView: View {
         title: String,
         subtitle: String? = nil,
         items: [ContentItem],
+        variant: RailVariant = .landscape,
         onSelect: @escaping (ContentItem) -> Void,
         onSeeAll: (() -> Void)? = nil
     ) {
         self.title = title
         self.subtitle = subtitle
         self.items = items
+        self.variant = variant
         self.onSelect = onSelect
         self.onSeeAll = onSeeAll
     }
@@ -41,13 +51,33 @@ public struct ContentRailView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: AppSpacing.medium) {
                         ForEach(items) { item in
-                            ContentCard(item: item) {
-                                onSelect(item)
-                            }
+                            cardView(for: item)
                         }
                     }
                     .padding(.horizontal, AppSpacing.medium)
                 }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func cardView(for item: ContentItem) -> some View {
+        switch variant {
+        case .continueWatching:
+            ContinueWatchingCardView(item: item) {
+                onSelect(item)
+            }
+        case .poster:
+            PosterCardView(item: item) {
+                onSelect(item)
+            }
+        case .podcast:
+            PodcastCardView(item: item) {
+                onSelect(item)
+            }
+        case .landscape:
+            LandscapeCardView(item: item) {
+                onSelect(item)
             }
         }
     }
