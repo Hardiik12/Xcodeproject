@@ -16,8 +16,9 @@ public struct AppShellView: View {
     }
     
     public var body: some View {
-        ZStack(alignment: .bottom) {
-            // Main Content Area
+        ZStack {
+            AppColors.background.ignoresSafeArea()
+            
             Group {
                 switch selectedTab {
                 case .home:
@@ -32,10 +33,9 @@ public struct AppShellView: View {
                     profileTab()
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            
-            // Sleek Floating Bottom Navigation Bar
-            customTabBar
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                customTabBar
+            }
         }
         .preferredColorScheme(.dark)
         .ignoresSafeArea(.keyboard, edges: .bottom)
@@ -79,6 +79,7 @@ public struct AppShellView: View {
         .shadow(color: Color.black.opacity(0.5), radius: 12, x: 0, y: 6)
         .padding(.horizontal, AppSpacing.medium)
         .padding(.bottom, AppSpacing.xSmall) // Floating above bottom safe area
+        .background(Color.clear)
     }
     
     @ViewBuilder

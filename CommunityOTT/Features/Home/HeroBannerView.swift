@@ -49,7 +49,7 @@ public struct HeroBannerView: View {
                         colors: [
                             Color.black.opacity(0.3),
                             Color.clear,
-                            AppColors.background.opacity(0.8),
+                            AppColors.background.opacity(0.85),
                             AppColors.background
                         ],
                         startPoint: .top,
@@ -57,10 +57,10 @@ public struct HeroBannerView: View {
                     )
                 }
             }
-            .frame(height: 270) // Compact hero height to allow Continue Watching rail visibility
+            .frame(height: 230)
             
             // Hero Content Overlay
-            VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
+            VStack(alignment: .leading, spacing: AppSpacing.xxSmall + 2) {
                 // Category Badge
                 Text(item.category.uppercased())
                     .font(AppTypography.badge)
@@ -72,7 +72,7 @@ public struct HeroBannerView: View {
                 
                 // Title
                 Text(item.title)
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(AppColors.textPrimary)
                     .lineLimit(1)
                 
@@ -86,19 +86,19 @@ public struct HeroBannerView: View {
                     .font(AppTypography.footnote)
                     .foregroundStyle(AppColors.textSecondary.opacity(0.9))
                     .lineLimit(2)
-                    .padding(.trailing, AppSpacing.large)
+                    .padding(.trailing, AppSpacing.medium)
                 
                 // Action Buttons
                 HStack(spacing: AppSpacing.small) {
                     Button(action: onWatch) {
                         HStack(spacing: AppSpacing.xxSmall + 2) {
                             Image(systemName: "play.fill")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.system(size: 13, weight: .semibold))
                             Text("Watch")
                                 .font(AppTypography.headline)
                         }
                         .padding(.horizontal, AppSpacing.medium)
-                        .padding(.vertical, AppSpacing.xSmall + 2)
+                        .padding(.vertical, AppSpacing.xxSmall + 4)
                         .background(AppColors.primary)
                         .foregroundStyle(Color.black)
                         .cornerRadius(AppSpacing.CornerRadius.medium)
@@ -108,12 +108,12 @@ public struct HeroBannerView: View {
                     Button(action: onMyList) {
                         HStack(spacing: AppSpacing.xxSmall + 2) {
                             Image(systemName: "plus")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.system(size: 13, weight: .semibold))
                             Text("My List")
                                 .font(AppTypography.headline)
                         }
                         .padding(.horizontal, AppSpacing.medium)
-                        .padding(.vertical, AppSpacing.xSmall + 2)
+                        .padding(.vertical, AppSpacing.xxSmall + 4)
                         .background(AppColors.cardSurface.opacity(0.85))
                         .foregroundStyle(AppColors.textPrimary)
                         .overlay(
@@ -127,14 +127,14 @@ public struct HeroBannerView: View {
                 .padding(.top, AppSpacing.xxSmall)
             }
             .padding(.horizontal, AppSpacing.medium)
-            .padding(.bottom, AppSpacing.small)
+            .padding(.bottom, AppSpacing.xSmall)
         }
         .clipShape(RoundedRectangle(cornerRadius: AppSpacing.CornerRadius.large))
         .padding(.horizontal, AppSpacing.small)
         .opacity(isVisible ? 1.0 : 0.0)
-        .offset(y: isVisible ? 0 : 12)
+        .offset(y: isVisible ? 0 : 8)
         .onAppear {
-            withAnimation(.easeOut(duration: 0.4)) {
+            withAnimation(.easeOut(duration: 0.35)) {
                 isVisible = true
             }
         }
