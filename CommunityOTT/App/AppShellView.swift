@@ -16,28 +16,25 @@ public struct AppShellView: View {
     }
     
     public var body: some View {
-        ZStack(alignment: .top) {
+        ZStack(alignment: .bottom) {
             AppColors.background.ignoresSafeArea()
             
-            // Active Tab Content View Container (Full screen, Top Aligned)
-            ZStack(alignment: .top) {
-                switch selectedTab {
-                case .home:
-                    HomeView()
-                case .discover:
-                    placeholderTab(for: .discover)
-                case .search:
-                    placeholderTab(for: .search)
-                case .saved:
-                    placeholderTab(for: .saved)
-                case .profile:
-                    profileTab()
-                }
+            // Tab Content
+            switch selectedTab {
+            case .home:
+                HomeView()
+            case .discover:
+                placeholderTab(for: .discover)
+            case .search:
+                placeholderTab(for: .search)
+            case .saved:
+                placeholderTab(for: .saved)
+            case .profile:
+                profileTab()
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                customTabBar
-            }
+            
+            // Floating Bottom Tab Bar
+            customTabBar
         }
         .preferredColorScheme(.dark)
         .ignoresSafeArea(.keyboard, edges: .bottom)
@@ -80,7 +77,7 @@ public struct AppShellView: View {
         )
         .shadow(color: Color.black.opacity(0.5), radius: 12, x: 0, y: 6)
         .padding(.horizontal, AppSpacing.medium)
-        .padding(.bottom, AppSpacing.xSmall) // Floating above bottom safe area
+        .padding(.bottom, AppSpacing.xSmall) // Floating slightly above bottom edge
         .background(Color.clear)
     }
     

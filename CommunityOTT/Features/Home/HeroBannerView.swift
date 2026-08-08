@@ -27,37 +27,36 @@ public struct HeroBannerView: View {
     public var body: some View {
         ZStack(alignment: .bottomLeading) {
             // Background Image (Remote URL -> Local Asset -> Gradient Fallback)
-            GeometryReader { geometry in
-                ZStack {
-                    if let bannerURLString = item.bannerURL ?? item.posterURL,
-                       let url = URL(string: bannerURLString) {
-                        AsyncImage(url: url) { image in
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: geometry.size.width, height: geometry.size.height)
-                                .clipped()
-                        } placeholder: {
-                            heroLocalImage(width: geometry.size.width, height: geometry.size.height)
-                        }
-                    } else {
-                        heroLocalImage(width: geometry.size.width, height: geometry.size.height)
+            ZStack {
+                if let bannerURLString = item.bannerURL ?? item.posterURL,
+                   let url = URL(string: bannerURLString) {
+                    AsyncImage(url: url) { image in
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 220)
+                            .clipped()
+                    } placeholder: {
+                        heroLocalImage(height: 220)
                     }
-                    
-                    // Dark Cinematic Vignette & Gradient Overlay
-                    LinearGradient(
-                        colors: [
-                            Color.black.opacity(0.3),
-                            Color.clear,
-                            AppColors.background.opacity(0.85),
-                            AppColors.background
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
+                } else {
+                    heroLocalImage(height: 220)
                 }
+                
+                // Dark Cinematic Vignette & Gradient Overlay
+                LinearGradient(
+                    colors: [
+                        Color.black.opacity(0.3),
+                        Color.clear,
+                        AppColors.background.opacity(0.85),
+                        AppColors.background
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
             }
-            .frame(height: 230)
+            .frame(height: 220)
             
             // Hero Content Overlay
             VStack(alignment: .leading, spacing: AppSpacing.xxSmall + 2) {
@@ -129,10 +128,10 @@ public struct HeroBannerView: View {
             .padding(.horizontal, AppSpacing.medium)
             .padding(.bottom, AppSpacing.xSmall)
         }
+        .frame(height: 220)
         .clipShape(RoundedRectangle(cornerRadius: AppSpacing.CornerRadius.large))
         .padding(.horizontal, AppSpacing.small)
         .opacity(isVisible ? 1.0 : 0.0)
-        .offset(y: isVisible ? 0 : 8)
         .onAppear {
             withAnimation(.easeOut(duration: 0.35)) {
                 isVisible = true
@@ -143,18 +142,20 @@ public struct HeroBannerView: View {
     }
     
     @ViewBuilder
-    private func heroLocalImage(width: CGFloat, height: CGFloat) -> some View {
+    private func heroLocalImage(height: CGFloat) -> some View {
         if let imageName = item.imageName {
             Image(imageName)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
-                .frame(width: width, height: height)
+                .frame(maxWidth: .infinity)
+                .frame(height: height)
                 .clipped()
         } else {
             Image("hero_heritage")
                 .resizable()
                 .aspectRatio(contentMode: .fill)
-                .frame(width: width, height: height)
+                .frame(maxWidth: .infinity)
+                .frame(height: height)
                 .clipped()
         }
     }

@@ -89,9 +89,8 @@ public struct HomeView: View {
                         )
                     }
                     .padding(.top, AppSpacing.xxSmall)
-                    .padding(.bottom, AppSpacing.medium)
+                    .padding(.bottom, 90) // Ensure final content cards scroll cleanly above floating tab bar
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
         }
         .task {
@@ -131,7 +130,6 @@ public struct HomeView: View {
         .padding(.horizontal, AppSpacing.medium)
         .padding(.top, AppSpacing.xxSmall)
         .padding(.bottom, AppSpacing.xxSmall)
-        .background(AppColors.background)
     }
 }
 
