@@ -19,21 +19,24 @@ public struct AppShellView: View {
         ZStack(alignment: .bottom) {
             AppColors.background.ignoresSafeArea()
             
-            // Tab Content
-            switch selectedTab {
-            case .home:
-                HomeView()
-            case .discover:
-                placeholderTab(for: .discover)
-            case .search:
-                placeholderTab(for: .search)
-            case .saved:
-                placeholderTab(for: .saved)
-            case .profile:
-                profileTab()
+            // Active Tab Content Container (Full Width & Height)
+            ZStack(alignment: .top) {
+                switch selectedTab {
+                case .home:
+                    HomeView()
+                case .discover:
+                    placeholderTab(for: .discover)
+                case .search:
+                    placeholderTab(for: .search)
+                case .saved:
+                    placeholderTab(for: .saved)
+                case .profile:
+                    profileTab()
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             
-            // Floating Bottom Tab Bar
+            // Floating Bottom Tab Bar Overlay
             customTabBar
         }
         .preferredColorScheme(.dark)

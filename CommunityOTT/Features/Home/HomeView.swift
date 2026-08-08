@@ -89,10 +89,12 @@ public struct HomeView: View {
                         )
                     }
                     .padding(.top, AppSpacing.xxSmall)
-                    .padding(.bottom, 90) // Ensure final content cards scroll cleanly above floating tab bar
+                    .padding(.bottom, 110) // Ensure final content cards scroll cleanly above floating tab bar
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .task {
             await viewModel.loadHomeData()
         }
