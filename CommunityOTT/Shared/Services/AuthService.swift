@@ -18,12 +18,13 @@ public protocol AuthServiceProtocol: Sendable {
     var authStatusPublisher: AnyPublisher<AuthStatus, Never> { get }
     func currentStatus() async -> AuthStatus
     func login(email: String) async throws -> User
+    func login(name: String?, email: String) async throws -> User
     func loginAsGuest() async throws
     func logout() async throws
 }
 
 public final class MockAuthService: AuthServiceProtocol, @unchecked Sendable {
-    private let statusSubject = CurrentValueSubject<AuthStatus, Never>(.guest)
+    private let statusSubject = CurrentValueSubject<AuthStatus, Never>(.unauthenticated)
     
     public init() {}
     
@@ -36,12 +37,16 @@ public final class MockAuthService: AuthServiceProtocol, @unchecked Sendable {
     }
     
     public func login(email: String) async throws -> User {
+        try await login(name: nil, email: email)
+    }
+    
+    public func login(name: String?, email: String) async throws -> User {
         try await Task.sleep(nanoseconds: 300_000_000) // Simulate auth network latency
         let user = User(
-            id: "user-101",
-            name: "Community Member",
+            id: "user-\(UUID().uuidString.prefix(6))",
+            name: name ?? "Community Member",
             email: email,
-            preferredLanguage: "Telugu",
+            preferredLanguage: "English",
             isSubscribed: true
         )
         statusSubject.send(.authenticated(user))

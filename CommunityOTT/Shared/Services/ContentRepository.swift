@@ -17,4 +17,6 @@ public protocol ContentRepositoryProtocol: Sendable {
     func fetchContentByCategory(id: String) async throws -> [ContentItem]
     func fetchContentByIDs(ids: Set<String>) async throws -> [ContentItem]
     func searchContent(query: String) async throws -> [ContentItem]
+    func getAllContentItems() async throws -> [ContentItem]
+    func getContentItem(id: String) async throws -> ContentItem?
 }

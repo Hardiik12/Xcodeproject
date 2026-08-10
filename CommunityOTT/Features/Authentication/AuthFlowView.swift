@@ -7,56 +7,105 @@
 
 import SwiftUI
 
+public enum AuthFlowStep {
+    case landing
+    case login
+    case otp(input: String, name: String?)
+    case register
+}
+
 public struct AuthFlowView: View {
+    let authService: AuthServiceProtocol
     let onAuthenticate: () -> Void
     let onContinueAsGuest: () -> Void
     
-    public init(onAuthenticate: @escaping () -> Void, onContinueAsGuest: @escaping () -> Void) {
+    @State private var currentStep: AuthFlowStep = .landing
+    
+    public init(
+        authService: AuthServiceProtocol = MockAuthService(),
+        onAuthenticate: @escaping () -> Void,
+        onContinueAsGuest: @escaping () -> Void
+    ) {
+        self.authService = authService
         self.onAuthenticate = onAuthenticate
         self.onContinueAsGuest = onContinueAsGuest
     }
     
     public var body: some View {
-        ZStack {
-            AppColors.background.ignoresSafeArea()
-            
-            VStack(spacing: AppSpacing.large) {
-                Spacer()
+        Group {
+            switch currentStep {
+            case .landing:
+                LandingView(
+                    onGetStarted: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            currentStep = .login
+                        }
+                    },
+                    onSignIn: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            currentStep = .login
+                        }
+                    },
+                    onContinueAsGuest: onContinueAsGuest
+                )
                 
-                VStack(spacing: AppSpacing.medium) {
-                    Image(systemName: "person.crop.square.fill")
-                        .font(.system(size: 64))
-                        .foregroundStyle(AppColors.primary)
-                    
-                    Text("Welcome to CommunityOTT")
-                        .font(AppTypography.heroTitle)
-                        .foregroundStyle(AppColors.textPrimary)
-                        .multilineTextAlignment(.center)
-                    
-                    Text("Stream authentic cultural stories, documentaries, podcasts, and community entertainment.")
-                        .font(AppTypography.body)
-                        .foregroundStyle(AppColors.textSecondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, AppSpacing.large)
-                }
+            case .login:
+                LoginView(
+                    onContinue: { userInput in
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            currentStep = .otp(input: userInput, name: nil)
+                        }
+                    },
+                    onCreateAccount: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            currentStep = .register
+                        }
+                    },
+                    onContinueAsGuest: onContinueAsGuest,
+                    onBack: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            currentStep = .landing
+                        }
+                    }
+                )
                 
-                Spacer()
+            case .otp(let input, let name):
+                OTPVerificationView(
+                    input: input,
+                    name: name,
+                    onVerifySuccess: { verifiedInput, registeredName in
+                        Task {
+                            _ = try? await authService.login(name: registeredName, email: verifiedInput)
+                            await MainActor.run {
+                                onAuthenticate()
+                            }
+                        }
+                    },
+                    onChangeDestination: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            currentStep = name != nil ? .register : .login
+                        }
+                    },
+                    onBack: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            currentStep = name != nil ? .register : .login
+                        }
+                    }
+                )
                 
-                VStack(spacing: AppSpacing.medium) {
-                    PrimaryButton(
-                        title: "Sign In / Register",
-                        iconSystemName: "arrow.right.circle.fill",
-                        action: onAuthenticate
-                    )
-                    
-                    SecondaryButton(
-                        title: "Explore as Guest",
-                        iconSystemName: "eye.fill",
-                        action: onContinueAsGuest
-                    )
-                }
-                .padding(.horizontal, AppSpacing.large)
-                .padding(.bottom, AppSpacing.xLarge)
+            case .register:
+                RegisterView(
+                    onRegister: { userInput, registeredName in
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            currentStep = .otp(input: userInput, name: registeredName)
+                        }
+                    },
+                    onBack: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            currentStep = .login
+                        }
+                    }
+                )
             }
         }
     }

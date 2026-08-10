@@ -9,6 +9,7 @@ import SwiftUI
 
 public struct AppShellView: View {
     @State private var selectedTab: TabItem = .home
+    @ObservedObject private var langStore = LanguagePreferenceStore.shared
     let onSignOut: (() -> Void)?
     
     public init(onSignOut: (() -> Void)? = nil) {
@@ -27,7 +28,7 @@ public struct AppShellView: View {
                 case .discover:
                     DiscoverView()
                 case .search:
-                    placeholderTab(for: .search)
+                    SearchView()
                 case .saved:
                     SavedView {
                         withAnimation(.easeInOut(duration: 0.2)) {
@@ -35,7 +36,11 @@ public struct AppShellView: View {
                         }
                     }
                 case .profile:
-                    profileTab()
+                    ProfileView {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedTab = .discover
+                        }
+                    }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -60,7 +65,7 @@ public struct AppShellView: View {
                             .font(.system(size: 20, weight: selectedTab == tab ? .bold : .regular))
                             .foregroundStyle(selectedTab == tab ? AppColors.primary : Color.white.opacity(0.5))
                         
-                        Text(tab.title)
+                        Text(langStore.localizedString(for: tab.title))
                             .font(.system(size: 10, weight: selectedTab == tab ? .semibold : .regular))
                             .foregroundStyle(selectedTab == tab ? AppColors.primary : Color.white.opacity(0.5))
                     }

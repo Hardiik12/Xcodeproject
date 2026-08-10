@@ -289,4 +289,14 @@ public final class MockContentRepository: ContentRepositoryProtocol, @unchecked 
             $0.description.localizedCaseInsensitiveContains(query)
         }
     }
+    
+    public func getAllContentItems() async throws -> [ContentItem] {
+        try await Task.sleep(nanoseconds: 100_000_000)
+        return [heroContent] + continueWatchingItems + featuredItems + voicesOfSuccessItems + folkAndCultureItems + empowermentItems + educationItems
+    }
+    
+    public func getContentItem(id: String) async throws -> ContentItem? {
+        let all = try await getAllContentItems()
+        return all.first { $0.id == id }
+    }
 }

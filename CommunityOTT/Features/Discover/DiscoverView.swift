@@ -9,6 +9,7 @@ import SwiftUI
 
 public struct DiscoverView: View {
     @StateObject private var viewModel = DiscoverViewModel()
+    @ObservedObject private var langStore = LanguagePreferenceStore.shared
     @State private var activeCategory: ContentCategory?
     @State private var selectedContentItem: ContentItem?
     
@@ -21,7 +22,7 @@ public struct DiscoverView: View {
             VStack(alignment: .leading, spacing: 0) {
                 // Header Area
                 VStack(alignment: .leading, spacing: AppSpacing.xxSmall) {
-                    Text("Discover")
+                    Text(langStore.localizedString(for: "Discover"))
                         .font(AppTypography.title2)
                         .foregroundStyle(AppColors.textPrimary)
                     

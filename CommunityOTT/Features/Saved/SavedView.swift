@@ -9,6 +9,7 @@ import SwiftUI
 
 public struct SavedView: View {
     @StateObject private var viewModel = SavedViewModel()
+    @ObservedObject private var langStore = LanguagePreferenceStore.shared
     @State private var selectedItem: ContentItem?
     let onExploreContent: (() -> Void)?
     
@@ -28,7 +29,7 @@ public struct SavedView: View {
             VStack(alignment: .leading, spacing: 0) {
                 // Header Area
                 VStack(alignment: .leading, spacing: AppSpacing.xxSmall) {
-                    Text("My List")
+                    Text(langStore.localizedString(for: "My List"))
                         .font(AppTypography.title2)
                         .foregroundStyle(AppColors.textPrimary)
                     

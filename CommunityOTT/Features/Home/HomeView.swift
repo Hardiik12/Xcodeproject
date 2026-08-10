@@ -9,7 +9,10 @@ import SwiftUI
 
 public struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
+    @StateObject private var notificationStore = NotificationStore.shared
+    @ObservedObject private var langStore = LanguagePreferenceStore.shared
     @State private var selectedItem: ContentItem?
+    @State private var isShowingNotifications = false
     
     public init() {}
     
@@ -57,7 +60,7 @@ public struct HomeView: View {
                         
                         // Rail 2: Featured (Poster Cards)
                         ContentRailView(
-                            title: "Featured",
+                            title: langStore.localizedString(for: "Featured Stories"),
                             subtitle: "Curated cultural releases",
                             items: viewModel.featuredItems,
                             variant: .poster,
@@ -68,7 +71,7 @@ public struct HomeView: View {
                         
                         // Rail 3: Voices of Success (Square Podcast Cards)
                         ContentRailView(
-                            title: "Voices of Success",
+                            title: langStore.localizedString(for: "Voices of Success"),
                             subtitle: "Podcasts & Community Leaders",
                             items: viewModel.voicesOfSuccess,
                             variant: .podcast,
@@ -79,7 +82,7 @@ public struct HomeView: View {
                         
                         // Rail 4: Folk & Culture (Landscape Cards)
                         ContentRailView(
-                            title: "Folk & Culture",
+                            title: langStore.localizedString(for: "Folk & Cultural Arts"),
                             subtitle: "Documentaries & Heritage Traditions",
                             items: viewModel.folkAndCulture,
                             variant: .landscape,
@@ -118,20 +121,32 @@ public struct HomeView: View {
             Spacer()
             
             Button {
-                // Notification action
+                isShowingNotifications = true
             } label: {
-                Image(systemName: "bell.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(AppColors.primary)
-                    .padding(8)
-                    .background(AppColors.cardSurface)
-                    .clipShape(Circle())
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: "bell.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(AppColors.primary)
+                        .padding(8)
+                        .background(AppColors.cardSurface)
+                        .clipShape(Circle())
+                    
+                    if notificationStore.unreadCount > 0 {
+                        Circle()
+                            .fill(AppColors.primary)
+                            .frame(width: 8, height: 8)
+                            .offset(x: -1, y: 1)
+                    }
+                }
             }
-            .accessibilityLabel("Notifications")
+            .accessibilityLabel("Notifications, \(notificationStore.unreadCount) unread")
         }
         .padding(.horizontal, AppSpacing.medium)
         .padding(.top, AppSpacing.xxSmall)
         .padding(.bottom, AppSpacing.xxSmall)
+        .sheet(isPresented: $isShowingNotifications) {
+            NotificationsView()
+        }
     }
 }
 

@@ -9,32 +9,41 @@ import SwiftUI
 
 public struct AppRootView: View {
     @StateObject private var viewModel = RootViewModel()
+    @StateObject private var onboardingStore = OnboardingStateStore.shared
     
     public init() {}
     
     public var body: some View {
         Group {
-            switch viewModel.state {
-            case .splash:
-                SplashView()
-                    .task {
-                        await viewModel.bootstrap()
+            if !onboardingStore.hasCompletedOnboarding {
+                OnboardingView {
+                    withAnimation(.easeInOut(duration: 0.4)) {
+                        onboardingStore.completeOnboarding()
                     }
-            case .unauthenticated:
-                AuthFlowView(
-                    onAuthenticate: {
-                        viewModel.authenticateUser()
-                    },
-                    onContinueAsGuest: {
-                        viewModel.continueAsGuest()
-                    }
-                )
-            case .authenticated:
-                AppShellView(
-                    onSignOut: {
-                        viewModel.signOut()
-                    }
-                )
+                }
+            } else {
+                switch viewModel.state {
+                case .splash:
+                    SplashView()
+                        .task {
+                            await viewModel.bootstrap()
+                        }
+                case .unauthenticated:
+                    AuthFlowView(
+                        onAuthenticate: {
+                            viewModel.authenticateUser()
+                        },
+                        onContinueAsGuest: {
+                            viewModel.continueAsGuest()
+                        }
+                    )
+                case .authenticated:
+                    AppShellView(
+                        onSignOut: {
+                            viewModel.signOut()
+                        }
+                    )
+                }
             }
         }
     }

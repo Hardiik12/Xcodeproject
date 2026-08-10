@@ -15,11 +15,18 @@ public final class URLSessionAPIClient: APIClientProtocol, @unchecked Sendable {
     private let baseURL: URL
     private let session: URLSession
     private let jsonDecoder: JSONDecoder
+    private let tokenStore: TokenStoreProtocol
     
-    public init(baseURL: URL, session: URLSession = .shared, jsonDecoder: JSONDecoder = JSONDecoder()) {
+    public init(
+        baseURL: URL = AppConfiguration.shared.baseURL,
+        session: URLSession = .shared,
+        jsonDecoder: JSONDecoder = JSONDecoder(),
+        tokenStore: TokenStoreProtocol = KeychainTokenStore.shared
+    ) {
         self.baseURL = baseURL
         self.session = session
         self.jsonDecoder = jsonDecoder
+        self.tokenStore = tokenStore
     }
     
     public func request<T: Decodable>(_ endpoint: APIEndpoint) async throws -> T {
@@ -37,12 +44,20 @@ public final class URLSessionAPIClient: APIClientProtocol, @unchecked Sendable {
         request.httpMethod = endpoint.method.rawValue
         request.httpBody = endpoint.body
         
+        // Custom Endpoint Headers
         endpoint.headers?.forEach { key, value in
             request.addValue(value, forHTTPHeaderField: key)
         }
         
         if request.value(forHTTPHeaderField: "Content-Type") == nil {
-            request.addValue("application.json", forHTTPHeaderField: "Content-Type")
+            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
+        
+        // Attach Authorization Token if required
+        if endpoint.requiresAuth {
+            if let token = tokenStore.retrieveAccessToken() {
+                request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            }
         }
         
         let (data, response): (Data, URLResponse)
@@ -56,11 +71,18 @@ public final class URLSessionAPIClient: APIClientProtocol, @unchecked Sendable {
             throw APIError.unknown
         }
         
+        // Centralized HTTP Status Code Error Mapping
         guard (200...299).contains(httpResponse.statusCode) else {
-            if httpResponse.statusCode == 401 {
+            switch httpResponse.statusCode {
+            case 401:
                 throw APIError.unauthorized
+            case 403:
+                throw APIError.serverError(statusCode: 403)
+            case 404:
+                throw APIError.serverError(statusCode: 404)
+            default:
+                throw APIError.serverError(statusCode: httpResponse.statusCode)
             }
-            throw APIError.serverError(statusCode: httpResponse.statusCode)
         }
         
         do {
