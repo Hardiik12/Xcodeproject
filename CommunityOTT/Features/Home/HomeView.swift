@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 public struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
     @StateObject private var notificationStore = NotificationStore.shared

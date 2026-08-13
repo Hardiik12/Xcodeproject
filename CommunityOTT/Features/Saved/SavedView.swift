@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 public struct SavedView: View {
     @StateObject private var viewModel = SavedViewModel()
     @ObservedObject private var langStore = LanguagePreferenceStore.shared

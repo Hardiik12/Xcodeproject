@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 public struct AppRootView: View {
     @StateObject private var viewModel = RootViewModel()
     @StateObject private var onboardingStore = OnboardingStateStore.shared

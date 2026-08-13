@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 public struct NotificationsView: View {
     @StateObject private var viewModel = NotificationsViewModel()
     @Environment(\.dismiss) private var dismiss

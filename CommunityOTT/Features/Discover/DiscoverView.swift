@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 public struct DiscoverView: View {
     @StateObject private var viewModel = DiscoverViewModel()
     @ObservedObject private var langStore = LanguagePreferenceStore.shared

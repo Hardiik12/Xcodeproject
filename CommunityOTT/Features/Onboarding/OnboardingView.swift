@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 public struct OnboardingView: View {
     @StateObject private var viewModel = OnboardingViewModel()
     let onComplete: () -> Void

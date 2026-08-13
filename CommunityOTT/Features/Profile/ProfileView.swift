@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 public struct ProfileView: View {
     @StateObject private var viewModel = ProfileViewModel()
     @ObservedObject private var langStore = LanguagePreferenceStore.shared

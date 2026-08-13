@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 public struct SplashView: View {
     @State private var logoScale: CGFloat = 0.8
     @State private var logoOpacity: Double = 0.0

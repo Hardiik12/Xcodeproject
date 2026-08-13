@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 public struct ContentDetailsView: View {
     @StateObject private var viewModel: ContentDetailsViewModel
     @Environment(\.dismiss) private var dismiss

@@ -14,6 +14,7 @@ public enum AuthFlowStep {
     case register
 }
 
+@MainActor
 public struct AuthFlowView: View {
     let authService: AuthServiceProtocol
     let onAuthenticate: () -> Void

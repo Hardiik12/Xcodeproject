@@ -8,6 +8,7 @@
 import SwiftUI
 import AVKit
 
+@MainActor
 public struct VideoPlayerView: View {
     @StateObject private var viewModel: VideoPlayerViewModel
     let contentTitle: String

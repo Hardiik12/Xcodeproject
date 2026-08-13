@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 public struct SearchView: View {
     @StateObject private var viewModel = SearchViewModel()
     @ObservedObject private var langStore = LanguagePreferenceStore.shared
