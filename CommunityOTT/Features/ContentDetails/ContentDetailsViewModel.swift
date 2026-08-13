@@ -25,12 +25,12 @@ public final class ContentDetailsViewModel: ObservableObject {
     
     public init(
         item: ContentItem,
-        mediaRepository: MediaRepositoryProtocol = MockMediaRepository(),
-        contentRepository: ContentRepositoryProtocol = MockContentRepository()
+        mediaRepository: MediaRepositoryProtocol? = nil,
+        contentRepository: ContentRepositoryProtocol? = nil
     ) {
         self.item = item
-        self.mediaRepository = mediaRepository
-        self.contentRepository = contentRepository
+        self.mediaRepository = mediaRepository ?? MockMediaRepository()
+        self.contentRepository = contentRepository ?? MockContentRepository()
         
         // Subscribe to SavedContentStore for live updates
         SavedContentStore.shared.$savedIDs

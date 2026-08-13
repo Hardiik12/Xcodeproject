@@ -18,8 +18,8 @@ public final class DiscoverViewModel: ObservableObject {
     
     private let repository: ContentRepositoryProtocol
     
-    public init(repository: ContentRepositoryProtocol = MockContentRepository()) {
-        self.repository = repository
+    public init(repository: ContentRepositoryProtocol? = nil) {
+        self.repository = repository ?? MockContentRepository()
     }
     
     public func loadCategories() async {

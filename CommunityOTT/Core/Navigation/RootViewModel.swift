@@ -17,8 +17,8 @@ public final class RootViewModel: ObservableObject {
     private let authService: AuthServiceProtocol
     private var cancellables = Set<AnyCancellable>()
     
-    public init(authService: AuthServiceProtocol = MockAuthService()) {
-        self.authService = authService
+    public init(authService: AuthServiceProtocol? = nil) {
+        self.authService = authService ?? MockAuthService()
         setupAuthListener()
     }
     

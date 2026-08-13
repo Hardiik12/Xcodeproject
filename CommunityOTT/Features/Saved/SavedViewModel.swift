@@ -17,8 +17,8 @@ public final class SavedViewModel: ObservableObject {
     private let repository: ContentRepositoryProtocol
     private var cancellables = Set<AnyCancellable>()
     
-    public init(repository: ContentRepositoryProtocol = MockContentRepository()) {
-        self.repository = repository
+    public init(repository: ContentRepositoryProtocol? = nil) {
+        self.repository = repository ?? MockContentRepository()
         setupSavedStoreSubscription()
     }
     

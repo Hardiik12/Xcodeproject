@@ -24,8 +24,8 @@ public final class HomeViewModel: ObservableObject {
     private var allKnownItems: [ContentItem] = []
     private var cancellables = Set<AnyCancellable>()
     
-    public init(repository: ContentRepositoryProtocol = MockContentRepository()) {
-        self.repository = repository
+    public init(repository: ContentRepositoryProtocol? = nil) {
+        self.repository = repository ?? MockContentRepository()
         setupProgressStoreSubscription()
     }
     

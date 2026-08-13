@@ -33,10 +33,10 @@ public final class ProfileViewModel: ObservableObject {
     
     public init(
         authService: AuthServiceProtocol? = nil,
-        repository: ContentRepositoryProtocol = MockContentRepository()
+        repository: ContentRepositoryProtocol? = nil
     ) {
         self.authService = authService ?? MockAuthService()
-        self.repository = repository
+        self.repository = repository ?? MockContentRepository()
         
         setupSubscriptions()
     }
