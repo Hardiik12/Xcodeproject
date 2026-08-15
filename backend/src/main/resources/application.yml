@@ -16,13 +16,38 @@ communityott:
     dev-auth-enabled: false
     otp-secret: ${COMMUNITYOTT_OTP_SECRET:communityott_dev_otp_secret_key_32bytes_min!}
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+    jwt:
+      issuer: ${COMMUNITYOTT_JWT_ISSUER:communityott}
+      audience: ${COMMUNITYOTT_JWT_AUDIENCE:communityott-api}
+      access-token-ttl-seconds: ${COMMUNITYOTT_JWT_ACCESS_TTL_SECONDS:900}
+      secret: ${COMMUNITYOTT_JWT_SECRET:communityott_dev_jwt_hmac_secret_key_minimum_256_bits_for_security!}
   auth:
+    delivery:
+      mode: ${COMMUNITYOTT_AUTH_DELIVERY_MODE:development}
+      email-provider: ${COMMUNITYOTT_AUTH_EMAIL_PROVIDER:development}
+      sms-provider: ${COMMUNITYOTT_AUTH_SMS_PROVIDER:development}
+      timeout-ms: 5000
     otp:
       length: 6
       ttl-seconds: 300
       max-attempts: 5
       resend-cooldown-seconds: 60
       request-limit-per-hour: 5
+  video:
+    storage:
+      endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+      access-key: ${MINIO_ROOT_USER:communityott_minio_admin}
+      secret-key: ${MINIO_ROOT_PASSWORD:communityott_minio_dev_password}
+      bucket-name: ${MINIO_BUCKET_NAME:communityott-videos}
+      auto-create-bucket: ${MINIO_AUTO_CREATE_BUCKET:true}
+      max-file-size: ${MINIO_MAX_FILE_SIZE:5368709120}
+    processing:
+      ffmpeg-path: ${COMMUNITYOTT_FFMPEG_PATH:ffmpeg}
+      ffprobe-path: ${COMMUNITYOTT_FFPROBE_PATH:ffprobe}
+      timeout-seconds: ${COMMUNITYOTT_VIDEO_PROCESSING_TIMEOUT_SECONDS:120}
+      max-concurrent-jobs: ${COMMUNITYOTT_VIDEO_MAX_CONCURRENT_JOBS:2}
+      temp-dir: ${COMMUNITYOTT_VIDEO_TEMP_DIR:/tmp/communityott-videos}
+      heartbeat-timeout-seconds: ${COMMUNITYOTT_VIDEO_HEARTBEAT_TIMEOUT_SECONDS:300}
 
 ---
 # ===================================================================

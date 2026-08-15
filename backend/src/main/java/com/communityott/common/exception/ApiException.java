@@ -15,6 +15,12 @@ public class ApiException extends RuntimeException {
         this.code = code;
     }
 
+    public ApiException(String message, HttpStatus status, String code, Throwable cause) {
+        super(message, cause);
+        this.status = status;
+        this.code = code;
+    }
+
     public ApiException(String message, HttpStatus status) {
         this(message, status, status.name());
     }

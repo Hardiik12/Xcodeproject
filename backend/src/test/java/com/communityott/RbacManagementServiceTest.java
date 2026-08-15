@@ -299,6 +299,8 @@ class RbacManagementServiceTest {
     @Test
     @DisplayName("TEST 15: Cannot remove SUPER_ADMIN from the only remaining SUPER_ADMIN user")
     void test15_CannotRemoveLastSuperAdminUser() {
+        userRoleRepository.deleteByRoleId(superAdminRole.getId());
+
         User adminUser = createTestUser();
         userRoleManagementService.assignRoleToUser(adminUser.getId(), superAdminRole.getId());
 

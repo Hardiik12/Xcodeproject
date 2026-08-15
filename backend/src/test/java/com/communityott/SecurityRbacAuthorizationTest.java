@@ -5,6 +5,7 @@ import com.communityott.role.repository.RoleRepository;
 import com.communityott.user.entity.User;
 import com.communityott.user.entity.UserStatus;
 import com.communityott.user.repository.UserRepository;
+import com.communityott.user.repository.UserRoleRepository;
 import com.communityott.user.service.UserRoleManagementService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -39,6 +40,9 @@ class SecurityRbacAuthorizationTest {
 
     @Autowired
     private UserRoleManagementService userRoleManagementService;
+
+    @Autowired
+    private UserRoleRepository userRoleRepository;
 
     private User superAdminUser;
     private User managerUser;
@@ -84,6 +88,26 @@ class SecurityRbacAuthorizationTest {
                 .status(UserStatus.ACTIVE)
                 .build());
         userRoleManagementService.assignRoleToUser(regularUser.getId(), userRole.getId());
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void tearDown() {
+        if (superAdminUser != null) {
+            userRoleRepository.deleteAll(userRoleRepository.findAll().stream().filter(ur -> ur.getUser().getId().equals(superAdminUser.getId())).toList());
+            userRepository.delete(superAdminUser);
+        }
+        if (managerUser != null) {
+            userRoleRepository.deleteAll(userRoleRepository.findAll().stream().filter(ur -> ur.getUser().getId().equals(managerUser.getId())).toList());
+            userRepository.delete(managerUser);
+        }
+        if (contentManagerUser != null) {
+            userRoleRepository.deleteAll(userRoleRepository.findAll().stream().filter(ur -> ur.getUser().getId().equals(contentManagerUser.getId())).toList());
+            userRepository.delete(contentManagerUser);
+        }
+        if (regularUser != null) {
+            userRoleRepository.deleteAll(userRoleRepository.findAll().stream().filter(ur -> ur.getUser().getId().equals(regularUser.getId())).toList());
+            userRepository.delete(regularUser);
+        }
     }
 
     // =========================================================================

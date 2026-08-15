@@ -30,6 +30,19 @@ public final class SystemPermissions {
     public static final String CONTENT_SUBMIT = "CONTENT_SUBMIT";
     public static final String CONTENT_PUBLISH = "CONTENT_PUBLISH";
     public static final String CONTENT_ARCHIVE = "CONTENT_ARCHIVE";
+    public static final String CONTENT_METADATA_UPDATE = "CONTENT_METADATA_UPDATE";
+
+    // Category Module
+    public static final String CATEGORY_VIEW = "CATEGORY_VIEW";
+    public static final String CATEGORY_CREATE = "CATEGORY_CREATE";
+    public static final String CATEGORY_UPDATE = "CATEGORY_UPDATE";
+    public static final String CATEGORY_DELETE = "CATEGORY_DELETE";
+
+    // Language Module
+    public static final String LANGUAGE_VIEW = "LANGUAGE_VIEW";
+    public static final String LANGUAGE_CREATE = "LANGUAGE_CREATE";
+    public static final String LANGUAGE_UPDATE = "LANGUAGE_UPDATE";
+    public static final String LANGUAGE_DELETE = "LANGUAGE_DELETE";
 
     // Video Module
     public static final String VIDEO_UPLOAD = "VIDEO_UPLOAD";
