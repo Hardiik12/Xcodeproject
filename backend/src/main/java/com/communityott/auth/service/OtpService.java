@@ -11,8 +11,10 @@ import com.communityott.auth.repository.OtpRequestRepository;
 import com.communityott.auth.util.IdentifierNormalizer;
 import com.communityott.auth.util.OtpCryptoUtils;
 import com.communityott.auth.util.OtpRedisKeyBuilder;
+import com.communityott.auth.delivery.OtpDeliveryService;
 import com.communityott.common.exception.OtpAlreadyUsedException;
 import com.communityott.common.exception.OtpCooldownException;
+import com.communityott.common.exception.OtpDeliveryException;
 import com.communityott.common.exception.OtpExpiredException;
 import com.communityott.common.exception.OtpInvalidException;
 import com.communityott.common.exception.OtpMaxAttemptsException;
@@ -45,6 +47,7 @@ public class OtpService {
     private final UserRepository userRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
+    private final OtpDeliveryService otpDeliveryService;
 
     @Value("${communityott.security.otp-secret}")
     private String otpSecret;
@@ -65,7 +68,8 @@ public class OtpService {
     private int requestLimitPerHour;
 
     /**
-     * Issues a new secure OTP for a normalized identifier and purpose.
+     * Issues a new secure OTP for a normalized identifier and purpose, persists audit state,
+     * and dispatches the OTP via the delivery subsystem.
      *
      * @param identifierType EMAIL or PHONE
      * @param rawIdentifier raw user input identifier string
@@ -145,13 +149,33 @@ public class OtpService {
             throw new IllegalStateException("Failed to issue OTP due to Redis storage error", e);
         }
 
-        log.info("Issued OTP request ID {} for identifierHash {}", savedRequest.getId(), identifierHash);
+        // 9. Dispatch OTP via Delivery Subsystem with Failure Rollback Compensation
+        try {
+            otpDeliveryService.deliverOtp(identifierType, identifier, plaintextOtp, purpose, savedRequest.getId());
+        } catch (Exception e) {
+            log.error("Failed to deliver OTP for request ID {}. Rolling back Redis active state.", savedRequest.getId(), e);
+            redisTemplate.delete(otpKey);
+            redisTemplate.delete(cooldownKey);
+
+            savedRequest.setStatus(OtpRequestStatus.FAILED);
+            otpRequestRepository.save(savedRequest);
+
+            if (e instanceof OtpDeliveryException ode) {
+                throw ode;
+            }
+            throw new OtpDeliveryException("Failed to deliver OTP to recipient", e);
+        }
+
+        log.info("Issued and dispatched OTP request ID {} for identifierHash {}", savedRequest.getId(), identifierHash);
+
+        // Only expose plaintext OTP in local development mode
+        String devOtp = "development".equalsIgnoreCase(otpDeliveryService.getDeliveryMode()) ? plaintextOtp : null;
 
         return OtpRequestResult.builder()
                 .requestId(savedRequest.getId())
                 .expiresInSeconds(ttlSeconds)
                 .resendAfterSeconds(resendCooldownSeconds)
-                .devExposedOtp(plaintextOtp)
+                .devExposedOtp(devOtp)
                 .build();
     }
 

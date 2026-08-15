@@ -59,4 +59,23 @@ public class RbacAuthorizationService {
 
         return hasPerm;
     }
+
+    /**
+     * Determines whether the authenticated user possesses any of the specified permissions.
+     *
+     * @param authentication the current Spring Security authentication object
+     * @param permissionNames one or more permission strings to check
+     * @return {@code true} if user possesses at least one of the permissions; {@code false} otherwise
+     */
+    public boolean hasAnyPermission(Authentication authentication, String... permissionNames) {
+        if (permissionNames == null || permissionNames.length == 0) {
+            return false;
+        }
+        for (String perm : permissionNames) {
+            if (hasPermission(authentication, perm)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

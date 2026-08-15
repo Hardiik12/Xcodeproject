@@ -40,6 +40,7 @@ public class SecurityConfig {
     private final CustomAccessDeniedHandler accessDeniedHandler;
     private final UserRepository userRepository;
     private final Environment environment;
+    private final com.communityott.auth.security.JwtTokenService jwtTokenService;
 
     @Value("${communityott.security.dev-auth-enabled:false}")
     private boolean devAuthEnabled;
@@ -94,16 +95,21 @@ public class SecurityConfig {
                                 "/actuator/health",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
-                                "/swagger-ui.html"
+                                "/swagger-ui.html",
+                                "/api/v1/auth/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
 
                 /*
-                 * Development Authentication Filter:
-                 * Registers DevAuthenticationFilter prior to UsernamePasswordAuthenticationFilter.
-                 * Filter evaluates X-Dev-User-Id headers only when devAuthEnabled=true and active profile is local/dev/test.
+                 * JWT & Development Authentication Filters:
+                 * 1. JwtAuthenticationFilter validates Authorization: Bearer <JWT> headers.
+                 * 2. DevAuthenticationFilter evaluates X-Dev-User-Id fallback only when devAuthEnabled=true and active profile is local/dev/test.
                  */
+                .addFilterBefore(
+                        new com.communityott.auth.security.JwtAuthenticationFilter(jwtTokenService, userRepository),
+                        UsernamePasswordAuthenticationFilter.class
+                )
                 .addFilterBefore(
                         new DevAuthenticationFilter(userRepository, environment, devAuthEnabled),
                         UsernamePasswordAuthenticationFilter.class
