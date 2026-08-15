@@ -1,0 +1,107 @@
+# ===================================================================
+# CommunityOTT Local Profile Settings (Spring Boot 3.3.5 / Java 21)
+# ===================================================================
+
+server:
+  port: ${PORT:8080}
+  shutdown: graceful
+
+spring:
+  application:
+    name: communityott-backend
+
+  # -----------------------------------------------------------------
+  # PostgreSQL Connection Configuration (Docker: communityott-postgres)
+  # -----------------------------------------------------------------
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:communityott}
+    username: ${POSTGRES_USER:communityott}
+    password: ${POSTGRES_PASSWORD:communityott_dev_password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: CommunityOTTHikariPool
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 30000
+      connection-timeout: 20000
+
+  # -----------------------------------------------------------------
+  # Hibernate & JPA Configuration
+  # -----------------------------------------------------------------
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # -----------------------------------------------------------------
+  # Flyway Database Migration Configuration
+  # -----------------------------------------------------------------
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    schemas: public
+
+  # -----------------------------------------------------------------
+  # Redis Connection Configuration (Docker: communityott-redis)
+  # -----------------------------------------------------------------
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 3000ms
+
+# -------------------------------------------------------------------
+# MinIO Local S3 Storage Configuration (Docker: communityott-minio)
+# -------------------------------------------------------------------
+communityott:
+  security:
+    dev-auth-enabled: true
+    allowed-origins: http://localhost:3000,http://localhost:5173,http://localhost:8080
+  minio:
+    endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+    access-key: ${MINIO_ROOT_USER:communityott}
+    secret-key: ${MINIO_ROOT_PASSWORD:communityott_minio_password}
+    bucket: ${MINIO_BUCKET_NAME:communityott-media}
+
+# -------------------------------------------------------------------
+# Spring Boot Actuator Endpoints & Health Check
+# -------------------------------------------------------------------
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  health:
+    db:
+      enabled: true
+    redis:
+      enabled: true
+
+# -------------------------------------------------------------------
+# OpenAPI / Swagger UI Settings
+# -------------------------------------------------------------------
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+# -------------------------------------------------------------------
+# Logging Configuration
+# -------------------------------------------------------------------
+logging:
+  level:
+    root: INFO
+    com.communityott: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.flywaydb: INFO
