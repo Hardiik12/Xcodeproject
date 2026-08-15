@@ -1,0 +1,140 @@
+# ===================================================================
+# CommunityOTT Local Development Infrastructure
+# Services: PostgreSQL 16, Redis 7 (AOF), MinIO (S3 Local Storage)
+# Dedicated Network: communityott-network
+# Persistent Storage: Named Docker Volumes
+# ===================================================================
+
+services:
+  # -----------------------------------------------------------------
+  # 1. PostgreSQL Database Service (Relational Store)
+  # Inside Docker: postgres:5432
+  # Host: localhost:5432
+  # -----------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: communityott-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-communityott}
+      POSTGRES_USER: ${POSTGRES_USER:-communityott}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-communityott_dev_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # Named volume stores PostgreSQL database data files across container restarts
+      - communityott-postgres-data:/var/lib/postgresql/data
+    networks:
+      - communityott-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # -----------------------------------------------------------------
+  # 2. Redis Cache & Queue Service (In-Memory Store with AOF Persistence)
+  # Inside Docker: redis:6379
+  # Host: localhost:6379
+  # -----------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: communityott-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      # Named volume stores Redis append-only file (AOF) and snapshot persistence data
+      - communityott-redis-data:/data
+    networks:
+      - communityott-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # -----------------------------------------------------------------
+  # 3. MinIO Object Storage Service (Local S3 Replacement)
+  # Inside Docker: minio:9000 (API), minio:9001 (Console)
+  # Host: localhost:9000 (API), localhost:9001 (Console)
+  # -----------------------------------------------------------------
+  minio:
+    image: minio/minio:latest
+    container_name: communityott-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-communityott}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-communityott_minio_password}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      # Named volume stores MinIO object storage files (buckets, videos, thumbnails, subtitles)
+      - communityott-minio-data:/data
+    networks:
+      - communityott-network
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # -----------------------------------------------------------------
+  # 4. MinIO Initialization Service (Automated Bucket Creation)
+  # Runs idempotently to ensure 'communityott-media' bucket exists
+  # -----------------------------------------------------------------
+  minio-init:
+    image: minio/mc:latest
+    container_name: communityott-minio-init
+    restart: on-failure
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-communityott}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-communityott_minio_password}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-communityott-media}
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks:
+      - communityott-network
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD;
+      /usr/bin/mc mb --ignore-existing myminio/$$MINIO_BUCKET_NAME;
+      /usr/bin/mc anonymous set download myminio/$$MINIO_BUCKET_NAME;
+      echo 'MinIO initialization complete: bucket \"'$$MINIO_BUCKET_NAME'\" is ready.';
+      exit 0;
+      "
+
+# ===================================================================
+# Dedicated Internal Bridge Network
+# Container-to-container communication MUST use service names:
+#   postgres:5432
+#   redis:6379
+#   minio:9000
+# ===================================================================
+networks:
+  communityott-network:
+    name: communityott-network
+    driver: bridge
+
+# ===================================================================
+# Persistent Named Volumes (Data survives 'docker compose down')
+# ===================================================================
+volumes:
+  # Stores PostgreSQL database data files (tables, indexes, schemas)
+  communityott-postgres-data:
+    name: communityott-postgres-data
+
+  # Stores Redis append-only file (AOF) logs and RDB snapshots
+  communityott-redis-data:
+    name: communityott-redis-data
+
+  # Stores MinIO S3 object storage data (media files, thumbnails, subtitles)
+  communityott-minio-data:
+    name: communityott-minio-data

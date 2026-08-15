@@ -1,0 +1,32 @@
+# Environment configuration files (contains local development passwords)
+.env
+.env.local
+.env.*.local
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Build output directories (Spring Boot / Maven / Gradle / Node)
+target/
+build/
+.gradle/
+out/
+bin/
+
+# IDE Configuration
+.idea/
+.vscode/
+*.workspace
+*.xcodeproj/
+*.xcworkspace/
+
+# Log Files
+*.log
+logs/
+
+# Temporary files
+*.tmp
+temp/
