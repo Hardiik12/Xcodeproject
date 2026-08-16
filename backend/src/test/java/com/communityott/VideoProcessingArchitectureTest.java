@@ -17,12 +17,14 @@ import com.communityott.content.processing.DefaultFFprobeService;
 import com.communityott.content.processing.DefaultProcessRunner;
 import com.communityott.content.processing.DefaultVideoProcessor;
 import com.communityott.content.processing.FFmpegProperties;
+import com.communityott.content.processing.FFmpegTranscodeService;
 import com.communityott.content.processing.FFprobeService;
 import com.communityott.content.processing.ProcessExecutionResult;
 import com.communityott.content.processing.ProcessRunner;
 import com.communityott.content.repository.ContentRepository;
 import com.communityott.content.repository.VideoAssetRepository;
 import com.communityott.content.repository.VideoProcessingJobRepository;
+import com.communityott.content.repository.VideoRenditionRepository;
 import com.communityott.content.service.VideoProcessingService;
 import com.communityott.content.service.VideoUploadService;
 import com.communityott.content.storage.ObjectStorageService;
@@ -54,6 +56,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -112,6 +115,9 @@ public class VideoProcessingArchitectureTest {
     private VideoProcessingJobRepository jobRepository;
 
     @Autowired
+    private VideoRenditionRepository videoRenditionRepository;
+
+    @Autowired
     private VideoProcessingService videoProcessingService;
 
     @Autowired
@@ -131,6 +137,9 @@ public class VideoProcessingArchitectureTest {
 
     @MockBean
     private FFprobeService ffprobeService;
+
+    @MockBean
+    private FFmpegTranscodeService ffmpegTranscodeService;
 
     @MockBean
     private ProcessRunner processRunner;
@@ -370,9 +379,19 @@ public class VideoProcessingArchitectureTest {
                 .status(ProcessingJobStatus.QUEUED)
                 .build());
 
+        when(ffmpegTranscodeService.transcode(any(), any(), any())).thenAnswer(invocation -> {
+            File target = invocation.getArgument(1);
+            if (target.getParentFile() != null) target.getParentFile().mkdirs();
+            target.createNewFile();
+            try (FileOutputStream fos = new FileOutputStream(target)) {
+                fos.write(new byte[]{1, 2, 3, 4});
+            }
+            return true;
+        });
+
         DefaultVideoProcessor processor = new DefaultVideoProcessor(
-                jobRepository, videoAssetRepository, contentRepository,
-                objectStorageService, ffprobeService, ffmpegProperties
+                jobRepository, videoAssetRepository, videoRenditionRepository, contentRepository,
+                objectStorageService, ffprobeService, ffmpegTranscodeService, ffmpegProperties
         );
 
         processor.process(job.getId());
@@ -408,8 +427,8 @@ public class VideoProcessingArchitectureTest {
                 .build());
 
         DefaultVideoProcessor processor = new DefaultVideoProcessor(
-                jobRepository, videoAssetRepository, contentRepository,
-                objectStorageService, ffprobeService, ffmpegProperties
+                jobRepository, videoAssetRepository, videoRenditionRepository, contentRepository,
+                objectStorageService, ffprobeService, ffmpegTranscodeService, ffmpegProperties
         );
 
         processor.process(job.getId());

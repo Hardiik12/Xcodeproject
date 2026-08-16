@@ -57,3 +57,25 @@ spring:
   config:
     activate:
       on-profile: local
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/communityott}
+    username: ${SPRING_DATASOURCE_USERNAME:communityott_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:communityott_password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: CommunityOTTHikariPool
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 30000
+      connection-timeout: 20000
+      max-lifetime: 1800000
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:communityott_redis_password}
+      timeout: 2000ms
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration

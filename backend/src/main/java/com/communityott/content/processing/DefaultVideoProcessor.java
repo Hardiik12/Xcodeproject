@@ -1,16 +1,24 @@
 package com.communityott.content.processing;
 
+import com.communityott.common.exception.VideoProcessingException;
 import com.communityott.common.exception.VideoProcessingJobNotFoundException;
 import com.communityott.content.entity.Content;
 import com.communityott.content.entity.ContentStatus;
 import com.communityott.content.entity.ProcessingJobStatus;
+import com.communityott.content.entity.ProcessingJobType;
+import com.communityott.content.entity.RenditionStatus;
 import com.communityott.content.entity.VideoAsset;
 import com.communityott.content.entity.VideoAssetStatus;
 import com.communityott.content.entity.VideoProcessingJob;
+import com.communityott.content.entity.VideoRendition;
+import com.communityott.content.entity.VideoResolution;
 import com.communityott.content.repository.ContentRepository;
 import com.communityott.content.repository.VideoAssetRepository;
 import com.communityott.content.repository.VideoProcessingJobRepository;
+import com.communityott.content.repository.VideoRenditionRepository;
+import com.communityott.content.storage.ChecksumUtility;
 import com.communityott.content.storage.ObjectStorageService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -20,13 +28,18 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Component
@@ -36,10 +49,13 @@ public class DefaultVideoProcessor implements VideoProcessor {
 
     private final VideoProcessingJobRepository jobRepository;
     private final VideoAssetRepository videoAssetRepository;
+    private final VideoRenditionRepository videoRenditionRepository;
     private final ContentRepository contentRepository;
     private final ObjectStorageService objectStorageService;
     private final FFprobeService ffprobeService;
+    private final FFmpegTranscodeService ffmpegTranscodeService;
     private final FFmpegProperties properties;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public void process(Long jobId) {
@@ -63,7 +79,6 @@ public class DefaultVideoProcessor implements VideoProcessor {
             job = jobRepository.findByIdWithAssetAndContent(jobId)
                     .orElseThrow(() -> new VideoProcessingJobNotFoundException(jobId));
             VideoAsset asset = job.getVideoAsset();
-            Content content = asset.getContent();
 
             // 2. Prepare local scratch workspace
             tempDir = createTempWorkingDir(jobId);
@@ -86,15 +101,66 @@ public class DefaultVideoProcessor implements VideoProcessor {
                 return;
             }
 
-            // 5. Success path: update domain models
-            markJobSuccess(jobId, probeResult);
-            log.info("Successfully completed probe processing for jobId={}, assetId={}", jobId, asset.getId());
+            // Update probed metadata on asset
+            updateProbedMetadata(asset.getId(), probeResult);
+
+            // 5. Multi-resolution Transcoding Ladder
+            int sourceHeight = probeResult.getHeight() != null && probeResult.getHeight() > 0 ? probeResult.getHeight() : 1080;
+            List<VideoResolution> ladder = VideoResolution.getLadderForSource(sourceHeight);
+            log.info("Determined transcoding ladder for assetId={} (source height: {}p): {}",
+                    asset.getId(), sourceHeight, ladder);
+
+            List<Map<String, Object>> generatedRenditions = new ArrayList<>();
+
+            for (VideoResolution res : ladder) {
+                File renditionLocalFile = new File(tempDir, "rendition_" + res.getLabel() + ".mp4");
+                TranscodeProfile profile = TranscodeProfile.fromResolution(res);
+
+                log.info("Transcoding rendition [{}] for assetId={}, jobId={}", res.getLabel(), asset.getId(), jobId);
+                boolean success = ffmpegTranscodeService.transcode(sourceLocalFile, renditionLocalFile, profile);
+
+                if (!success || !renditionLocalFile.exists() || renditionLocalFile.length() == 0) {
+                    throw new VideoProcessingException("Failed to generate rendition " + res.getLabel());
+                }
+
+                // Calculate SHA-256 for rendition
+                String checksum = ChecksumUtility.calculateSha256(renditionLocalFile);
+                long fileSize = renditionLocalFile.length();
+                String storageKey = "renditions/asset_" + asset.getId() + "/" + res.getLabel() + ".mp4";
+
+                // Upload rendition to MinIO
+                log.info("Uploading rendition [{}] to MinIO (key: {}, size: {} bytes)", res.getLabel(), storageKey, fileSize);
+                try (InputStream renditionIn = new BufferedInputStream(new FileInputStream(renditionLocalFile))) {
+                    objectStorageService.uploadObject(asset.getStorageBucket(), storageKey, renditionIn, fileSize, "video/mp4");
+                }
+
+                // Persist VideoRendition metadata to database
+                saveOrUpdateRendition(asset.getId(), res, profile, storageKey, asset.getStorageBucket(),
+                        fileSize, checksum, probeResult.getDurationSeconds(), parseFrameRate(probeResult.getFrameRate()));
+
+                Map<String, Object> summary = new HashMap<>();
+                summary.put("resolution", res.getLabel());
+                summary.put("storageKey", storageKey);
+                summary.put("fileSizeBytes", fileSize);
+                summary.put("checksumSha256", checksum);
+                generatedRenditions.add(summary);
+            }
+
+            // 6. Success path: update domain models
+            Map<String, Object> finalPayload = new HashMap<>();
+            finalPayload.put("probed", probeResult);
+            finalPayload.put("renditions", generatedRenditions);
+            String payloadJson = objectMapper.writeValueAsString(finalPayload);
+
+            markJobSuccess(jobId, payloadJson, probeResult.getDurationSeconds());
+            log.info("Successfully completed transcoding pipeline for jobId={}, assetId={}, generated {} renditions",
+                    jobId, asset.getId(), generatedRenditions.size());
 
         } catch (Exception e) {
             log.error("Unexpected failure during processing for jobId={}: {}", jobId, e.getMessage(), e);
             markJobFailed(jobId, "PROCESSING_EXECUTION_ERROR", e.getMessage());
         } finally {
-            // 6. Scratch file cleanup in ALL execution paths
+            // 7. Scratch file cleanup in ALL execution paths
             cleanupDirectory(tempDir);
         }
     }
@@ -118,23 +184,61 @@ public class DefaultVideoProcessor implements VideoProcessor {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void markJobSuccess(Long jobId, MediaProbeResult probeResult) {
-        VideoProcessingJob job = jobRepository.findByIdWithAssetAndContent(jobId)
-                .orElseThrow(() -> new VideoProcessingJobNotFoundException(jobId));
-        job.markCompleted(probeResult.getRawJson());
-        jobRepository.save(job);
-
-        VideoAsset asset = job.getVideoAsset();
+    public void updateProbedMetadata(Long assetId, MediaProbeResult probeResult) {
+        VideoAsset asset = videoAssetRepository.findById(assetId)
+                .orElseThrow(() -> new VideoProcessingException("Asset not found for id: " + assetId));
         asset.setDurationSeconds(probeResult.getDurationSeconds());
         asset.setWidth(probeResult.getWidth());
         asset.setHeight(probeResult.getHeight());
         asset.setBitrateKbps(probeResult.getBitrateKbps());
+        videoAssetRepository.save(asset);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void saveOrUpdateRendition(Long assetId, VideoResolution res, TranscodeProfile profile,
+                                      String storageKey, String storageBucket, long fileSizeBytes,
+                                      String checksumSha256, Integer durationSeconds, Double frameRate) {
+        VideoAsset asset = videoAssetRepository.findById(assetId)
+                .orElseThrow(() -> new VideoProcessingException("Asset not found for id: " + assetId));
+
+        VideoRendition rendition = videoRenditionRepository
+                .findByVideoAssetIdAndResolution(assetId, res.getLabel())
+                .orElse(VideoRendition.builder()
+                        .videoAsset(asset)
+                        .resolution(res.getLabel())
+                        .build());
+
+        rendition.setWidth(res.getWidth());
+        rendition.setHeight(res.getHeight());
+        rendition.setVideoCodec("h264");
+        rendition.setAudioCodec("aac");
+        rendition.setBitrateKbps(res.getVideoBitrateKbps());
+        rendition.setAudioBitrateKbps(res.getAudioBitrateKbps());
+        rendition.setFrameRate(frameRate != null ? frameRate : 30.0);
+        rendition.setFileSizeBytes(fileSizeBytes);
+        rendition.setStorageBucket(storageBucket);
+        rendition.setStorageKey(storageKey);
+        rendition.setChecksumSha256(checksumSha256);
+        rendition.setDurationSeconds(durationSeconds);
+        rendition.setStatus(RenditionStatus.READY);
+
+        videoRenditionRepository.save(rendition);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void markJobSuccess(Long jobId, String payloadJson, Integer durationSeconds) {
+        VideoProcessingJob job = jobRepository.findByIdWithAssetAndContent(jobId)
+                .orElseThrow(() -> new VideoProcessingJobNotFoundException(jobId));
+        job.markCompleted(payloadJson);
+        jobRepository.save(job);
+
+        VideoAsset asset = job.getVideoAsset();
         asset.setStatus(VideoAssetStatus.READY);
         videoAssetRepository.save(asset);
 
         Content content = asset.getContent();
         if (content.getDurationSeconds() == null || content.getDurationSeconds() <= 0) {
-            content.setDurationSeconds(probeResult.getDurationSeconds());
+            content.setDurationSeconds(durationSeconds);
         }
         if (content.getStatus() == ContentStatus.PROCESSING || content.getStatus() == ContentStatus.UPLOADING || content.getStatus() == ContentStatus.DRAFT) {
             content.setStatus(ContentStatus.READY);
@@ -194,6 +298,23 @@ public class DefaultVideoProcessor implements VideoProcessor {
             }
         }
         return ".mp4";
+    }
+
+    private Double parseFrameRate(String frameRateStr) {
+        if (frameRateStr == null || frameRateStr.isBlank()) {
+            return 30.0;
+        }
+        try {
+            if (frameRateStr.contains("/")) {
+                String[] parts = frameRateStr.split("/");
+                double num = Double.parseDouble(parts[0].trim());
+                double den = Double.parseDouble(parts[1].trim());
+                return den != 0 ? num / den : 30.0;
+            }
+            return Double.parseDouble(frameRateStr.trim());
+        } catch (Exception e) {
+            return 30.0;
+        }
     }
 
     private String getWorkerIdentifier() {

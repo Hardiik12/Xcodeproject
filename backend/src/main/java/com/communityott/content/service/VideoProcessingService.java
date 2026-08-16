@@ -5,6 +5,7 @@ import com.communityott.common.exception.InvalidJobStateTransitionException;
 import com.communityott.common.exception.VideoAssetNotFoundException;
 import com.communityott.common.exception.VideoProcessingJobNotFoundException;
 import com.communityott.content.dto.VideoProcessingJobResponse;
+import com.communityott.content.dto.VideoRenditionResponse;
 import com.communityott.content.entity.ProcessingJobStatus;
 import com.communityott.content.entity.ProcessingJobType;
 import com.communityott.content.entity.VideoAsset;
@@ -13,6 +14,7 @@ import com.communityott.content.processing.FFmpegProperties;
 import com.communityott.content.processing.VideoProcessor;
 import com.communityott.content.repository.VideoAssetRepository;
 import com.communityott.content.repository.VideoProcessingJobRepository;
+import com.communityott.content.repository.VideoRenditionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -34,6 +36,7 @@ public class VideoProcessingService {
 
     private final VideoProcessingJobRepository jobRepository;
     private final VideoAssetRepository videoAssetRepository;
+    private final VideoRenditionRepository videoRenditionRepository;
     private final VideoProcessor videoProcessor;
     private final FFmpegProperties properties;
 
@@ -42,7 +45,16 @@ public class VideoProcessingService {
 
     @Transactional
     public VideoProcessingJobResponse createAndEnqueueProbeJob(Long videoAssetId, Long userId) {
-        log.info("Creating and enqueuing PROBE job for videoAssetId={}, requestedBy={}", videoAssetId, userId);
+        return createAndEnqueueJob(videoAssetId, ProcessingJobType.PROBE, userId);
+    }
+
+    @Transactional
+    public VideoProcessingJobResponse createAndEnqueueTranscodeJob(Long videoAssetId, Long userId) {
+        return createAndEnqueueJob(videoAssetId, ProcessingJobType.TRANSCODE, userId);
+    }
+
+    private VideoProcessingJobResponse createAndEnqueueJob(Long videoAssetId, ProcessingJobType jobType, Long userId) {
+        log.info("Creating and enqueuing {} job for videoAssetId={}, requestedBy={}", jobType, videoAssetId, userId);
 
         VideoAsset videoAsset = videoAssetRepository.findById(videoAssetId)
                 .orElseThrow(() -> new VideoAssetNotFoundException(videoAssetId));
@@ -50,18 +62,18 @@ public class VideoProcessingService {
         // Idempotency check: prevent duplicate active jobs for the same video asset and type
         Optional<VideoProcessingJob> activeJob = jobRepository.findActiveJob(
                 videoAssetId,
-                ProcessingJobType.PROBE,
+                jobType,
                 Set.of(ProcessingJobStatus.QUEUED, ProcessingJobStatus.PROCESSING)
         );
 
         if (activeJob.isPresent()) {
-            log.warn("Active PROBE job ID: {} already exists for videoAssetId: {}", activeJob.get().getId(), videoAssetId);
-            throw new ActiveJobAlreadyExistsException(videoAssetId, ProcessingJobType.PROBE.name());
+            log.warn("Active {} job ID: {} already exists for videoAssetId: {}", jobType, activeJob.get().getId(), videoAssetId);
+            throw new ActiveJobAlreadyExistsException(videoAssetId, jobType.name());
         }
 
         VideoProcessingJob job = VideoProcessingJob.builder()
                 .videoAsset(videoAsset)
-                .jobType(ProcessingJobType.PROBE)
+                .jobType(jobType)
                 .status(ProcessingJobStatus.QUEUED)
                 .attemptCount(0)
                 .maxAttempts(3)
@@ -81,7 +93,7 @@ public class VideoProcessingService {
             }
         });
 
-        log.info("Successfully enqueued PROBE job ID: {} for videoAssetId: {}", jobId, videoAssetId);
+        log.info("Successfully enqueued {} job ID: {} for videoAssetId: {}", jobType, jobId, videoAssetId);
         return VideoProcessingJobResponse.fromEntity(savedJob);
     }
 
@@ -132,6 +144,17 @@ public class VideoProcessingService {
         VideoProcessingJob job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new VideoProcessingJobNotFoundException(jobId));
         return VideoProcessingJobResponse.fromEntity(job);
+    }
+
+    @Transactional(readOnly = true)
+    public List<VideoRenditionResponse> getRenditionsForVideo(Long videoAssetId) {
+        if (!videoAssetRepository.existsById(videoAssetId)) {
+            throw new VideoAssetNotFoundException(videoAssetId);
+        }
+        return videoRenditionRepository.findByVideoAssetIdOrderByHeightDesc(videoAssetId)
+                .stream()
+                .map(VideoRenditionResponse::fromEntity)
+                .collect(Collectors.toList());
     }
 
     @Transactional

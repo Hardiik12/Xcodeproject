@@ -37,4 +37,12 @@ public final class ChecksumUtility {
             throw new VideoStorageException("Failed to calculate SHA-256 checksum: " + e.getMessage(), e);
         }
     }
+
+    public static String calculateSha256(java.io.File file) {
+        try (InputStream in = new java.io.BufferedInputStream(new java.io.FileInputStream(file))) {
+            return calculateSha256(in);
+        } catch (Exception e) {
+            throw new VideoStorageException("Failed to calculate SHA-256 checksum for file " + file.getAbsolutePath() + ": " + e.getMessage(), e);
+        }
+    }
 }
