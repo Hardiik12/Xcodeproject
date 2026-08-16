@@ -48,6 +48,18 @@ communityott:
       max-concurrent-jobs: ${COMMUNITYOTT_VIDEO_MAX_CONCURRENT_JOBS:2}
       temp-dir: ${COMMUNITYOTT_VIDEO_TEMP_DIR:/tmp/communityott-videos}
       heartbeat-timeout-seconds: ${COMMUNITYOTT_VIDEO_HEARTBEAT_TIMEOUT_SECONDS:300}
+  media:
+    delivery:
+      mode: ${COMMUNITYOTT_MEDIA_DELIVERY_MODE:LOCAL}
+      playback-url-ttl-seconds: ${COMMUNITYOTT_PLAYBACK_URL_TTL_SECONDS:900}
+      cdn:
+        base-url: ${COMMUNITYOTT_CDN_BASE_URL:https://cdn.communityott.com}
+        signing-key-id: ${COMMUNITYOTT_CDN_SIGNING_KEY_ID:}
+        signing-private-key: ${COMMUNITYOTT_CDN_SIGNING_PRIVATE_KEY:}
+        token-auth-enabled: ${COMMUNITYOTT_CDN_TOKEN_AUTH_ENABLED:false}
+      rate-limit:
+        enabled: ${COMMUNITYOTT_PLAYBACK_RATE_LIMIT_ENABLED:true}
+        max-requests-per-minute: ${COMMUNITYOTT_PLAYBACK_MAX_REQUESTS_PER_MINUTE:30}
 
 ---
 # ===================================================================

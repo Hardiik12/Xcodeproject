@@ -30,6 +30,7 @@ import java.util.List;
 public class ContentController {
 
     private final ContentService contentService;
+    private final com.communityott.content.service.MediaDeliveryService mediaDeliveryService;
 
     @GetMapping
     @PreAuthorize("@rbacAuthorization.hasPermission(authentication, 'CONTENT_VIEW')")
@@ -65,6 +66,17 @@ public class ContentController {
     public ApiResponse<ContentResponse> getContentDetails(@PathVariable Long id) {
         ContentResponse content = contentService.getPublishedContentById(id);
         return ApiResponse.success(content, "Content details retrieved successfully");
+    }
+
+    @GetMapping("/{id}/playback")
+    @PreAuthorize("@rbacAuthorization.hasPermission(authentication, 'VIDEO_VIEW')")
+    @Operation(summary = "Get authorized playback URL", description = "Authorizes consumer playback for published OTT content, generating a secure, time-limited HLS master playlist URL.")
+    public ApiResponse<com.communityott.content.dto.PlaybackResponse> getPlaybackInfo(
+            @PathVariable Long id,
+            org.springframework.security.core.Authentication authentication) {
+        String userIdentifier = authentication != null ? authentication.getName() : "anonymous";
+        com.communityott.content.dto.PlaybackResponse response = mediaDeliveryService.getPlaybackInfo(id, userIdentifier);
+        return ApiResponse.success(response, "Playback authorization granted successfully");
     }
 
     @GetMapping("/featured")
