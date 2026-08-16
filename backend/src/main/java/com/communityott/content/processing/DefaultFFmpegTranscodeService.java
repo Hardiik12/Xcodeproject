@@ -72,6 +72,14 @@ public class DefaultFFmpegTranscodeService implements FFmpegTranscodeService {
         command.add("-preset");
         command.add(profile.getPreset());
 
+        // Aligned GOP / Keyframe interval for adaptive streaming HLS chunk alignment
+        command.add("-g");
+        command.add("48");
+        command.add("-keyint_min");
+        command.add("48");
+        command.add("-sc_threshold");
+        command.add("0");
+
         // Bitrate control
         int videoBitrate = profile.getVideoBitrateKbps();
         command.add("-b:v");

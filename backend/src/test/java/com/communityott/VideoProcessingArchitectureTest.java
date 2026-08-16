@@ -16,6 +16,7 @@ import com.communityott.content.entity.VideoProcessingJob;
 import com.communityott.content.processing.DefaultFFprobeService;
 import com.communityott.content.processing.DefaultProcessRunner;
 import com.communityott.content.processing.DefaultVideoProcessor;
+import com.communityott.content.processing.FFmpegHlsPackagingService;
 import com.communityott.content.processing.FFmpegProperties;
 import com.communityott.content.processing.FFmpegTranscodeService;
 import com.communityott.content.processing.FFprobeService;
@@ -142,7 +143,13 @@ public class VideoProcessingArchitectureTest {
     private FFmpegTranscodeService ffmpegTranscodeService;
 
     @MockBean
+    private FFmpegHlsPackagingService ffmpegHlsPackagingService;
+
+    @MockBean
     private ProcessRunner processRunner;
+
+    @Autowired
+    private DefaultVideoProcessor defaultVideoProcessor;
 
     private User superAdmin;
     private User contentManager;
@@ -389,12 +396,32 @@ public class VideoProcessingArchitectureTest {
             return true;
         });
 
-        DefaultVideoProcessor processor = new DefaultVideoProcessor(
-                jobRepository, videoAssetRepository, videoRenditionRepository, contentRepository,
-                objectStorageService, ffprobeService, ffmpegTranscodeService, ffmpegProperties
-        );
+        when(ffmpegHlsPackagingService.packageToHls(any(), any(), any(), anyInt())).thenAnswer(invocation -> {
+            File targetDir = invocation.getArgument(1);
+            if (!targetDir.exists()) targetDir.mkdirs();
+            File playlist = new File(targetDir, "index.m3u8");
+            File init = new File(targetDir, "init.mp4");
+            File seg0 = new File(targetDir, "segment_00000.m4s");
+            java.nio.file.Files.writeString(playlist.toPath(), "#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:2\n#EXT-X-MAP:URI=\"init.mp4\"\n#EXTINF:2.000,\nsegment_00000.m4s\n#EXT-X-ENDLIST\n");
+            java.nio.file.Files.write(init.toPath(), new byte[]{1, 2, 3});
+            java.nio.file.Files.write(seg0.toPath(), new byte[]{4, 5, 6});
+            return com.communityott.content.processing.HlsPackagingResult.builder()
+                    .resolution("1080p")
+                    .playlistFile(playlist)
+                    .initSegmentFile(init)
+                    .mediaSegmentFiles(List.of(seg0))
+                    .segmentCount(1)
+                    .targetDurationSeconds(2)
+                    .bandwidthBps(5000000L)
+                    .averageBandwidthBps(4500000L)
+                    .codecs("avc1.640028,mp4a.40.2")
+                    .width(1920)
+                    .height(1080)
+                    .frameRate(30.0)
+                    .build();
+        });
 
-        processor.process(job.getId());
+        defaultVideoProcessor.process(job.getId());
 
         VideoProcessingJob updatedJob = jobRepository.findById(job.getId()).orElseThrow();
         assertEquals(ProcessingJobStatus.COMPLETED, updatedJob.getStatus());
@@ -426,12 +453,7 @@ public class VideoProcessingArchitectureTest {
                 .status(ProcessingJobStatus.QUEUED)
                 .build());
 
-        DefaultVideoProcessor processor = new DefaultVideoProcessor(
-                jobRepository, videoAssetRepository, videoRenditionRepository, contentRepository,
-                objectStorageService, ffprobeService, ffmpegTranscodeService, ffmpegProperties
-        );
-
-        processor.process(job.getId());
+        defaultVideoProcessor.process(job.getId());
 
         VideoProcessingJob updatedJob = jobRepository.findById(job.getId()).orElseThrow();
         assertEquals(ProcessingJobStatus.FAILED, updatedJob.getStatus());

@@ -1,18 +1,23 @@
 package com.communityott.content.service;
 
 import com.communityott.common.exception.ActiveJobAlreadyExistsException;
+import com.communityott.common.exception.HlsPackageNotFoundException;
 import com.communityott.common.exception.InvalidJobStateTransitionException;
 import com.communityott.common.exception.VideoAssetNotFoundException;
 import com.communityott.common.exception.VideoProcessingJobNotFoundException;
+import com.communityott.content.dto.VideoHlsPackageResponse;
 import com.communityott.content.dto.VideoProcessingJobResponse;
 import com.communityott.content.dto.VideoRenditionResponse;
 import com.communityott.content.entity.ProcessingJobStatus;
 import com.communityott.content.entity.ProcessingJobType;
 import com.communityott.content.entity.VideoAsset;
+import com.communityott.content.entity.VideoHlsPackage;
+import com.communityott.content.entity.VideoHlsVariant;
 import com.communityott.content.entity.VideoProcessingJob;
 import com.communityott.content.processing.FFmpegProperties;
 import com.communityott.content.processing.VideoProcessor;
 import com.communityott.content.repository.VideoAssetRepository;
+import com.communityott.content.repository.VideoHlsPackageRepository;
 import com.communityott.content.repository.VideoProcessingJobRepository;
 import com.communityott.content.repository.VideoRenditionRepository;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +42,8 @@ public class VideoProcessingService {
     private final VideoProcessingJobRepository jobRepository;
     private final VideoAssetRepository videoAssetRepository;
     private final VideoRenditionRepository videoRenditionRepository;
+    private final VideoHlsPackageRepository videoHlsPackageRepository;
+    private final com.communityott.content.repository.VideoHlsVariantRepository videoHlsVariantRepository;
     private final VideoProcessor videoProcessor;
     private final FFmpegProperties properties;
 
@@ -51,6 +58,11 @@ public class VideoProcessingService {
     @Transactional
     public VideoProcessingJobResponse createAndEnqueueTranscodeJob(Long videoAssetId, Long userId) {
         return createAndEnqueueJob(videoAssetId, ProcessingJobType.TRANSCODE, userId);
+    }
+
+    @Transactional
+    public VideoProcessingJobResponse createAndEnqueueHlsPackageJob(Long videoAssetId, Long userId) {
+        return createAndEnqueueJob(videoAssetId, ProcessingJobType.PACKAGE_HLS, userId);
     }
 
     private VideoProcessingJobResponse createAndEnqueueJob(Long videoAssetId, ProcessingJobType jobType, Long userId) {
@@ -155,6 +167,18 @@ public class VideoProcessingService {
                 .stream()
                 .map(VideoRenditionResponse::fromEntity)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public VideoHlsPackageResponse getHlsPackageForVideo(Long videoAssetId) {
+        if (!videoAssetRepository.existsById(videoAssetId)) {
+            throw new VideoAssetNotFoundException(videoAssetId);
+        }
+        VideoHlsPackage pkg = videoHlsPackageRepository.findByVideoAssetId(videoAssetId)
+                .orElseThrow(() -> new com.communityott.common.exception.HlsPackageNotFoundException(videoAssetId));
+        List<VideoHlsVariant> variants = videoHlsVariantRepository.findByHlsPackageIdOrderByHeightDesc(pkg.getId());
+        pkg.setVariants(variants);
+        return VideoHlsPackageResponse.fromEntity(pkg);
     }
 
     @Transactional

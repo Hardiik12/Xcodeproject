@@ -15,6 +15,29 @@ public class StorageKeyGenerator {
         return String.format("sources/%d/%s_%s", contentId, prefix, sanitizedFilename);
     }
 
+    public String generateHlsMasterKey(Long contentId, Long videoAssetId) {
+        return String.format("hls/%d/%d/master.m3u8", contentId, videoAssetId);
+    }
+
+    public String generateHlsVariantPlaylistKey(Long contentId, Long videoAssetId, String resolution) {
+        return String.format("hls/%d/%d/%s/index.m3u8", contentId, videoAssetId, sanitizeResolution(resolution));
+    }
+
+    public String generateHlsInitSegmentKey(Long contentId, Long videoAssetId, String resolution) {
+        return String.format("hls/%d/%d/%s/init.mp4", contentId, videoAssetId, sanitizeResolution(resolution));
+    }
+
+    public String generateHlsMediaSegmentKey(Long contentId, Long videoAssetId, String resolution, String segmentFilename) {
+        return String.format("hls/%d/%d/%s/%s", contentId, videoAssetId, sanitizeResolution(resolution), segmentFilename);
+    }
+
+    private String sanitizeResolution(String resolution) {
+        if (resolution == null || resolution.isBlank()) {
+            return "default";
+        }
+        return resolution.trim().toLowerCase(Locale.ROOT);
+    }
+
     private String sanitizeFilename(String filename) {
         if (filename == null || filename.isBlank()) {
             return "video.mp4";

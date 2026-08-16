@@ -3,6 +3,7 @@ package com.communityott.content.controller;
 import com.communityott.common.exception.InvalidJobStateTransitionException;
 import com.communityott.common.response.ApiResponse;
 import com.communityott.common.security.CommunityOttPrincipal;
+import com.communityott.content.dto.VideoHlsPackageResponse;
 import com.communityott.content.dto.VideoProcessingJobResponse;
 import com.communityott.content.dto.VideoRenditionResponse;
 import com.communityott.content.service.VideoProcessingService;
@@ -28,7 +29,7 @@ import java.util.List;
 @RequestMapping("/api/v1/admin/videos")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "Video Processing Management", description = "Endpoints for managing background video processing and multi-resolution transcoding")
+@Tag(name = "Video Processing Management", description = "Endpoints for managing background video processing, transcoding, and HLS packaging")
 @SecurityRequirement(name = "bearerAuth")
 public class VideoProcessingController {
 
@@ -58,6 +59,30 @@ public class VideoProcessingController {
         log.info("Admin userId={} requesting multi-resolution transcoding for videoId={}", userId, videoId);
         VideoProcessingJobResponse response = videoProcessingService.createAndEnqueueTranscodeJob(videoId, userId);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(ApiResponse.success(response, "Video transcoding job enqueued successfully"));
+    }
+
+    @PostMapping("/{videoId}/hls/package")
+    @PreAuthorize("@rbacAuthorization.hasPermission(authentication, 'VIDEO_PROCESS')")
+    @Operation(summary = "Enqueue HLS packaging", description = "Creates and enqueues a background PACKAGE_HLS job to segment renditions and build master manifest")
+    public ResponseEntity<ApiResponse<VideoProcessingJobResponse>> enqueueHlsPackaging(
+            @PathVariable Long videoId,
+            @AuthenticationPrincipal CommunityOttPrincipal principal
+    ) {
+        Long userId = principal != null ? principal.getUserId() : null;
+        log.info("Admin userId={} requesting HLS packaging for videoId={}", userId, videoId);
+        VideoProcessingJobResponse response = videoProcessingService.createAndEnqueueHlsPackageJob(videoId, userId);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(ApiResponse.success(response, "HLS packaging job enqueued successfully"));
+    }
+
+    @GetMapping("/{videoId}/hls")
+    @PreAuthorize("@rbacAuthorization.hasPermission(authentication, 'VIDEO_PROCESS')")
+    @Operation(summary = "Get HLS package details", description = "Retrieves HLS package metadata, master playlist object key, and variant playlist details")
+    public ResponseEntity<ApiResponse<VideoHlsPackageResponse>> getHlsPackage(
+            @PathVariable Long videoId
+    ) {
+        log.debug("Fetching HLS package metadata for videoId={}", videoId);
+        VideoHlsPackageResponse response = videoProcessingService.getHlsPackageForVideo(videoId);
+        return ResponseEntity.ok(ApiResponse.success(response, "HLS package metadata retrieved successfully"));
     }
 
     @GetMapping("/{videoId}/renditions")
