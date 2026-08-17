@@ -16,6 +16,7 @@ import com.communityott.content.repository.ContentRepository;
 import com.communityott.content.repository.VideoAssetRepository;
 import com.communityott.content.service.ContentAccessService;
 import com.communityott.content.service.MediaDeliveryService;
+import com.communityott.history.service.WatchHistoryService;
 import com.communityott.playback.config.PlaybackProperties;
 import com.communityott.playback.dto.PlaybackHeartbeatRequest;
 import com.communityott.playback.dto.PlaybackProgressRequest;
@@ -52,6 +53,7 @@ public class PlaybackSessionService {
     private final ContentAccessService contentAccessService;
     private final MediaDeliveryService mediaDeliveryService;
     private final WatchProgressService watchProgressService;
+    private final WatchHistoryService watchHistoryService;
     private final PlaybackSessionRateLimiter rateLimiter;
     private final PlaybackProperties playbackProperties;
 
@@ -161,6 +163,7 @@ public class PlaybackSessionService {
             }
             session.setLastPositionSeconds(pos);
             watchProgressService.recordProgress(userId, session.getContent(), session.getVideoAsset(), pos, session.getDurationSeconds());
+            watchHistoryService.recordViewing(userId, session.getContent(), sessionId, pos, session.getDurationSeconds(), session.getDeviceId(), session.getPlatform());
         }
 
         PlaybackSession saved = playbackSessionRepository.save(session);
@@ -203,6 +206,8 @@ public class PlaybackSessionService {
         WatchProgress progress = watchProgressService.recordProgress(
                 userId, session.getContent(), session.getVideoAsset(), pos, duration);
 
+        watchHistoryService.recordViewing(userId, session.getContent(), sessionId, pos, duration, session.getDeviceId(), session.getPlatform());
+
         return WatchProgressDto.from(progress);
     }
 
@@ -222,6 +227,7 @@ public class PlaybackSessionService {
             if (pos >= 0) {
                 session.setLastPositionSeconds(pos);
                 watchProgressService.recordProgress(userId, session.getContent(), session.getVideoAsset(), pos, session.getDurationSeconds());
+                watchHistoryService.recordViewing(userId, session.getContent(), sessionId, pos, session.getDurationSeconds(), session.getDeviceId(), session.getPlatform());
             }
         }
 
