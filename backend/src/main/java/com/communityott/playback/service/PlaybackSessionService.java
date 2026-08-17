@@ -274,7 +274,7 @@ public class PlaybackSessionService {
     /**
      * Checks if the session is alive (not expired by timeout or closed).
      */
-    private void checkSessionLiveness(PlaybackSession session) {
+    public void checkSessionLiveness(PlaybackSession session) {
         if (session.getStatus() == PlaybackSessionStatus.ENDED) {
             throw new PlaybackSessionNotActiveException(session.getSessionId(), session.getStatus().name());
         }
