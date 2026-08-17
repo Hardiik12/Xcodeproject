@@ -60,6 +60,14 @@ communityott:
       rate-limit:
         enabled: ${COMMUNITYOTT_PLAYBACK_RATE_LIMIT_ENABLED:true}
         max-requests-per-minute: ${COMMUNITYOTT_PLAYBACK_MAX_REQUESTS_PER_MINUTE:30}
+  playback:
+    completion-threshold-percent: ${COMMUNITYOTT_PLAYBACK_COMPLETION_THRESHOLD_PERCENT:95.0}
+    session-inactivity-timeout-minutes: ${COMMUNITYOTT_PLAYBACK_INACTIVITY_TIMEOUT_MINUTES:5}
+    cleanup-interval-ms: ${COMMUNITYOTT_PLAYBACK_CLEANUP_INTERVAL_MS:60000}
+    rate-limit:
+      enabled: ${COMMUNITYOTT_PLAYBACK_SESSION_RATE_LIMIT_ENABLED:true}
+      max-session-creations-per-minute: ${COMMUNITYOTT_PLAYBACK_MAX_SESSION_CREATIONS_PER_MINUTE:15}
+      max-requests-per-minute: ${COMMUNITYOTT_PLAYBACK_MAX_REQUESTS_PER_MINUTE:60}
 
 ---
 # ===================================================================
