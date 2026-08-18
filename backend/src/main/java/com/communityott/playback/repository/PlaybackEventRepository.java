@@ -21,4 +21,7 @@ public interface PlaybackEventRepository extends JpaRepository<PlaybackEvent, Lo
     Page<PlaybackEvent> findByUserIdOrderByOccurredAtDesc(Long userId, Pageable pageable);
 
     Page<PlaybackEvent> findByContentIdOrderByOccurredAtDesc(Long contentId, Pageable pageable);
+
+    List<PlaybackEvent> findByIdGreaterThanOrderByIdAsc(Long id, Pageable pageable);
 }
+
