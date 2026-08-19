@@ -54,7 +54,89 @@ public interface AnalyticsDailyMetricRepository extends JpaRepository<AnalyticsD
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
 
+    @Query("SELECT c.id AS categoryId, " +
+            "c.name AS categoryName, " +
+            "c.slug AS slug, " +
+            "SUM(m.totalSessions) AS totalSessions, " +
+            "SUM(m.totalPlays) AS totalPlays, " +
+            "SUM(m.uniqueViewers) AS uniqueViewers, " +
+            "SUM(m.totalWatchTimeSeconds) AS totalWatchTimeSeconds, " +
+            "SUM(m.completionCount) AS completionCount " +
+            "FROM AnalyticsDailyMetric m " +
+            "JOIN m.content cnt " +
+            "JOIN ContentCategory cc ON cc.content = cnt " +
+            "JOIN Category c ON c.id = cc.category.id " +
+            "WHERE m.metricDate BETWEEN :startDate AND :endDate " +
+            "GROUP BY c.id, c.name, c.slug " +
+            "ORDER BY SUM(m.totalWatchTimeSeconds) DESC")
+    List<Object[]> findCategoryPerformance(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
+    @Query("SELECT l.id AS languageId, " +
+            "l.name AS languageName, " +
+            "l.code AS languageCode, " +
+            "SUM(m.totalSessions) AS totalSessions, " +
+            "SUM(m.totalPlays) AS totalPlays, " +
+            "SUM(m.uniqueViewers) AS uniqueViewers, " +
+            "SUM(m.totalWatchTimeSeconds) AS totalWatchTimeSeconds, " +
+            "SUM(m.completionCount) AS completionCount " +
+            "FROM AnalyticsDailyMetric m " +
+            "JOIN m.content cnt " +
+            "JOIN cnt.originalLanguage l " +
+            "WHERE m.metricDate BETWEEN :startDate AND :endDate " +
+            "GROUP BY l.id, l.name, l.code " +
+            "ORDER BY SUM(m.totalWatchTimeSeconds) DESC")
+    List<Object[]> findLanguagePerformance(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
+    @Query("SELECT " +
+            "COALESCE(SUM(m.totalPlays), 0) AS totalPlays, " +
+            "COALESCE(SUM(m.uniqueViewers), 0) AS uniqueViewers, " +
+            "COALESCE(SUM(m.totalWatchTimeSeconds), 0) AS totalWatchTime " +
+            "FROM AnalyticsDailyMetric m")
+    List<Object[]> findLifetimeMetrics();
+
+    @Query(value = "SELECT " +
+            "m.metricDate AS metricDate, " +
+            "m.content.id AS contentId, " +
+            "(SELECT MIN(cc.category.id) FROM ContentCategory cc WHERE cc.content = m.content) AS categoryId, " +
+            "m.content.originalLanguage.id AS languageId, " +
+            "m.platform AS platform, " +
+            "m.totalSessions AS totalSessions, " +
+            "m.totalPlays AS totalPlays, " +
+            "m.uniqueViewers AS uniqueViewers, " +
+            "m.totalWatchTimeSeconds AS totalWatchTimeSeconds, " +
+            "m.completionCount AS completionCount, " +
+            "m.bufferEventCount AS bufferEventCount, " +
+            "m.errorCount AS errorCount, " +
+            "m.qualityChangeCount AS qualityChangeCount " +
+            "FROM AnalyticsDailyMetric m " +
+            "WHERE m.metricDate BETWEEN :startDate AND :endDate " +
+            "  AND (:platform IS NULL OR m.platform = :platform) " +
+            "  AND (:contentId IS NULL OR m.content.id = :contentId) " +
+            "  AND (:categoryId IS NULL OR EXISTS (SELECT 1 FROM ContentCategory cc WHERE cc.content = m.content AND cc.category.id = :categoryId)) " +
+            "  AND (:languageId IS NULL OR (m.content.originalLanguage IS NOT NULL AND m.content.originalLanguage.id = :languageId)) " +
+            "ORDER BY m.metricDate ASC, m.content.id ASC, m.platform ASC",
+            countQuery = "SELECT COUNT(m) " +
+            "FROM AnalyticsDailyMetric m " +
+            "WHERE m.metricDate BETWEEN :startDate AND :endDate " +
+            "  AND (:platform IS NULL OR m.platform = :platform) " +
+            "  AND (:contentId IS NULL OR m.content.id = :contentId) " +
+            "  AND (:categoryId IS NULL OR EXISTS (SELECT 1 FROM ContentCategory cc WHERE cc.content = m.content AND cc.category.id = :categoryId)) " +
+            "  AND (:languageId IS NULL OR (m.content.originalLanguage IS NOT NULL AND m.content.originalLanguage.id = :languageId))")
+    Page<Object[]> findExportRecords(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            @Param("platform") Platform platform,
+            @Param("contentId") Long contentId,
+            @Param("categoryId") Long categoryId,
+            @Param("languageId") Long languageId,
+            Pageable pageable);
+
     // Filtered Top Content Queries by Sort Metrics and Directions
+
     @Query("SELECT m.content.id AS contentId, " +
             "m.content.title AS title, " +
             "m.content.thumbnailUrl AS thumbnailUrl, " +

@@ -1,13 +1,17 @@
 package com.communityott.analytics.controller;
 
 import com.communityott.analytics.dto.AggregationJobResponse;
+import com.communityott.analytics.dto.AnalyticsExportResponse;
 import com.communityott.analytics.dto.AnalyticsOverviewResponse;
+
 import com.communityott.analytics.dto.AnalyticsTrendResponse;
 import com.communityott.analytics.dto.ContentAnalyticsResponse;
 import com.communityott.analytics.dto.ContentRankingItemDto;
 import com.communityott.analytics.dto.PlatformAnalyticsResponse;
 import com.communityott.analytics.service.AnalyticsAggregationService;
+import com.communityott.analytics.service.AnalyticsExportService;
 import com.communityott.analytics.service.AnalyticsQueryService;
+
 import com.communityott.common.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -39,6 +43,9 @@ public class AnalyticsController {
 
     private final AnalyticsQueryService queryService;
     private final AnalyticsAggregationService aggregationService;
+    private final AnalyticsExportService exportService;
+
+
 
     @GetMapping("/overview")
     @PreAuthorize("@rbacAuthorization.hasPermission(authentication, 'ANALYTICS_VIEW')")
@@ -217,4 +224,38 @@ public class AnalyticsController {
         AggregationJobResponse response = aggregationService.runAggregation(batchSize);
         return ApiResponse.success(response, "Aggregation job executed successfully");
     }
+
+    @GetMapping("/export")
+    @PreAuthorize("@rbacAuthorization.hasPermission(authentication, 'ANALYTICS_VIEW')")
+    @Operation(summary = "Export aggregated analytics dataset (analytics-contract-v1)",
+               description = "Machine-to-machine data export API returning structured, privacy-safe analytics records. Requires ANALYTICS_VIEW permission.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Analytics dataset exported successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid date range, platform, or pagination parameter"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized - authentication required"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
+    })
+    public ApiResponse<AnalyticsExportResponse> exportMetrics(
+            @Parameter(description = "Start date (ISO-8601 YYYY-MM-DD)")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @Parameter(description = "End date (ISO-8601 YYYY-MM-DD)")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @Parameter(description = "Filter by client platform: IOS, ANDROID, WEB")
+            @RequestParam(required = false) String platform,
+            @Parameter(description = "Filter by specific content ID")
+            @RequestParam(name = "content_id", required = false) Long contentId,
+            @Parameter(description = "Filter by category ID")
+            @RequestParam(name = "category_id", required = false) Long categoryId,
+            @Parameter(description = "Filter by language ID")
+            @RequestParam(name = "language_id", required = false) Long languageId,
+            @Parameter(description = "Zero-indexed page number (default: 0)")
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @Parameter(description = "Page size (min: 1, max: 100, default: 100)")
+            @RequestParam(required = false, defaultValue = "100") int size) {
+
+        AnalyticsExportResponse response = exportService.exportMetrics(
+                from, to, platform, contentId, categoryId, languageId, page, size);
+        return ApiResponse.success(response, "Analytics export dataset generated successfully");
+    }
 }
+
