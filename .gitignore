@@ -1,4 +1,25 @@
-# Xcode
+# ==============================================================================
+# CommunityOTT Root .gitignore
+# ==============================================================================
+
+# Environment & Secrets (NEVER COMMIT)
+.env
+.env.*
+.env.local
+*.env
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.jks
+*.cer
+*.crt
+credentials.json
+secrets/
+private/
+
+# Xcode & Apple Development
 build/
 DerivedData/
 *.pbxuser
@@ -10,10 +31,42 @@ DerivedData/
 *.perspectivev3
 !default.perspectivev3
 xcuserdata/
+*.xcuserdata
 *.xccheckout
 *.moved-aside
 *.xcworkspace/xcuserdata/
 *.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
 
-# macOS
+# Backend Build & Package Outputs
+**/target/
+**/build/
+**/out/
+**/bin/
+**/.gradle/
+*.class
+*.jar
+*.war
+*.ear
+
+# Logs & Temporary Files
+*.log
+logs/
+*.tmp
+*.temp
+temp/
+
+# IDE & Editor Configuration
+.idea/
+.vscode/
+*.swp
+*~
+*.sublime-project
+*.sublime-workspace
+
+# Operating System Files
 .DS_Store
+**/.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
