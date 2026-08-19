@@ -41,4 +41,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
            "JOIN ur.role r " +
            "WHERE ur.user.id = :userId")
     Set<String> findRoleNamesByUserId(@Param("userId") Long userId);
+
+    long countByStatus(com.communityott.user.entity.UserStatus status);
 }
+

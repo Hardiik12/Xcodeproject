@@ -1,10 +1,18 @@
 package com.communityott.analytics.service;
 
+import com.communityott.analytics.dto.AdminSystemAnalyticsResponse;
+import com.communityott.analytics.dto.AdminUserAnalyticsResponse;
 import com.communityott.analytics.dto.AnalyticsOverviewResponse;
 import com.communityott.analytics.dto.AnalyticsTrendResponse;
+import com.communityott.analytics.dto.CategoryAnalyticsResponse;
+import com.communityott.analytics.dto.CategoryMetricDto;
 import com.communityott.analytics.dto.ContentAnalyticsResponse;
 import com.communityott.analytics.dto.ContentRankingItemDto;
 import com.communityott.analytics.dto.DailyTrendPointDto;
+import com.communityott.analytics.dto.LanguageAnalyticsResponse;
+import com.communityott.analytics.dto.LanguageMetricDto;
+import com.communityott.analytics.dto.ManagerOverviewResponse;
+import com.communityott.analytics.dto.PeriodComparisonDto;
 import com.communityott.analytics.dto.PlatformAnalyticsResponse;
 import com.communityott.analytics.dto.PlatformMetricDto;
 import com.communityott.analytics.entity.AnalyticsDailyMetric;
@@ -16,7 +24,12 @@ import com.communityott.common.exception.AnalyticsInvalidSortException;
 import com.communityott.common.exception.ContentNotFoundException;
 import com.communityott.common.exception.InvalidDateRangeException;
 import com.communityott.content.entity.Content;
+import com.communityott.content.entity.ContentStatus;
 import com.communityott.content.repository.ContentRepository;
+import com.communityott.content.repository.VideoAssetRepository;
+import com.communityott.playback.repository.PlaybackSessionRepository;
+import com.communityott.user.entity.UserStatus;
+import com.communityott.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -28,6 +41,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
@@ -51,6 +65,9 @@ public class AnalyticsQueryService {
 
     private final AnalyticsDailyMetricRepository dailyMetricRepository;
     private final ContentRepository contentRepository;
+    private final VideoAssetRepository videoAssetRepository;
+    private final UserRepository userRepository;
+    private final PlaybackSessionRepository playbackSessionRepository;
     private final RedisTemplate<String, Object> redisTemplate;
 
     public AnalyticsOverviewResponse getOverview(LocalDate startDate, LocalDate endDate) {
@@ -109,6 +126,283 @@ public class AnalyticsQueryService {
                 .bufferEvents(bufferEvents)
                 .playbackErrors(errors)
                 .qualityChanges(qualityChanges)
+                .build();
+
+        putInCache(cacheKey, response);
+        return response;
+    }
+
+    public ManagerOverviewResponse getManagerOverview(LocalDate startDate, LocalDate endDate, String timeWindow, String platformStr) {
+        DateRange range = resolveDateRange(startDate, endDate, timeWindow);
+        Platform platform = parsePlatform(platformStr);
+
+        long daysBetween = ChronoUnit.DAYS.between(range.start(), range.end()) + 1;
+        LocalDate prevStart = range.start().minusDays(daysBetween);
+        LocalDate prevEnd = range.start().minusDays(1);
+
+        String platformKey = platform != null ? platform.name() : "ALL";
+        String cacheKey = "communityott:analytics:manager:overview:" + range.start() + ":" + range.end() + ":" + platformKey;
+
+        ManagerOverviewResponse cached = getFromCache(cacheKey, ManagerOverviewResponse.class);
+        if (cached != null) {
+            return cached;
+        }
+
+        // Current period aggregation
+        List<AnalyticsDailyMetric> currentMetrics = dailyMetricRepository.findByMetricDateBetween(range.start(), range.end());
+        long curViews = 0, curPlays = 0, curViewers = 0, curWatchTime = 0, curCompletions = 0, curBuffers = 0, curErrors = 0, curQualities = 0;
+        for (AnalyticsDailyMetric m : currentMetrics) {
+            if (platform == null || m.getPlatform() == platform) {
+                curViews += m.getTotalSessions();
+                curPlays += m.getTotalPlays();
+                curViewers += m.getUniqueViewers();
+                curWatchTime += m.getTotalWatchTimeSeconds();
+                curCompletions += m.getCompletionCount();
+                curBuffers += m.getBufferEventCount();
+                curErrors += m.getErrorCount();
+                curQualities += m.getQualityChangeCount();
+            }
+        }
+
+        // Previous period aggregation
+        List<AnalyticsDailyMetric> prevMetrics = dailyMetricRepository.findByMetricDateBetween(prevStart, prevEnd);
+        long prevViews = 0, prevPlays = 0, prevViewers = 0, prevWatchTime = 0, prevCompletions = 0;
+        for (AnalyticsDailyMetric m : prevMetrics) {
+            if (platform == null || m.getPlatform() == platform) {
+                prevViews += m.getTotalSessions();
+                prevPlays += m.getTotalPlays();
+                prevViewers += m.getUniqueViewers();
+                prevWatchTime += m.getTotalWatchTimeSeconds();
+                prevCompletions += m.getCompletionCount();
+            }
+        }
+
+        double curCompRate = curViews > 0 ? Math.round(((double) curCompletions / curViews) * 100.0) / 100.0 : 0.0;
+        double prevCompRate = prevViews > 0 ? Math.round(((double) prevCompletions / prevViews) * 100.0) / 100.0 : 0.0;
+        double compRateGrowth;
+        if (prevCompRate > 0.0) {
+            compRateGrowth = Math.round(((curCompRate - prevCompRate) / prevCompRate) * 10000.0) / 100.0;
+        } else if (curCompRate > 0.0) {
+            compRateGrowth = 100.0;
+        } else {
+            compRateGrowth = 0.0;
+        }
+
+        Page<ContentRankingItemDto> topPage = getTopContent(range.start(), range.end(), null, platformStr, null, null, "WATCH_TIME", "DESC", 0, 5);
+
+        ManagerOverviewResponse response = ManagerOverviewResponse.builder()
+                .startDate(range.start())
+                .endDate(range.end())
+                .previousStartDate(prevStart)
+                .previousEndDate(prevEnd)
+                .views(PeriodComparisonDto.of(curViews, prevViews))
+                .plays(PeriodComparisonDto.of(curPlays, prevPlays))
+                .uniqueViewers(PeriodComparisonDto.of(curViewers, prevViewers))
+                .watchTimeSeconds(PeriodComparisonDto.of(curWatchTime, prevWatchTime))
+                .completedPlays(PeriodComparisonDto.of(curCompletions, prevCompletions))
+                .currentCompletionRate(curCompRate)
+                .previousCompletionRate(prevCompRate)
+                .completionRateGrowthPercentage(compRateGrowth)
+                .bufferEvents(curBuffers)
+                .playbackErrors(curErrors)
+                .qualityChanges(curQualities)
+                .topContent(topPage.getContent())
+                .build();
+
+        putInCache(cacheKey, response);
+        return response;
+    }
+
+    public CategoryAnalyticsResponse getCategoryAnalytics(LocalDate startDate, LocalDate endDate, String timeWindow) {
+        DateRange range = resolveDateRange(startDate, endDate, timeWindow);
+        String cacheKey = "communityott:analytics:manager:categories:" + range.start() + ":" + range.end();
+
+        CategoryAnalyticsResponse cached = getFromCache(cacheKey, CategoryAnalyticsResponse.class);
+        if (cached != null) {
+            return cached;
+        }
+
+        List<Object[]> rows = dailyMetricRepository.findCategoryPerformance(range.start(), range.end());
+        List<CategoryMetricDto> categories = new ArrayList<>();
+
+        for (Object[] r : rows) {
+            long views = ((Number) r[3]).longValue();
+            long completions = ((Number) r[7]).longValue();
+            double compRate = views > 0 ? Math.round(((double) completions / views) * 100.0) / 100.0 : 0.0;
+
+            categories.add(CategoryMetricDto.builder()
+                    .categoryId(((Number) r[0]).longValue())
+                    .categoryName((String) r[1])
+                    .slug((String) r[2])
+                    .totalViews(views)
+                    .totalPlays(((Number) r[4]).longValue())
+                    .uniqueViewers(((Number) r[5]).longValue())
+                    .totalWatchTimeSeconds(((Number) r[6]).longValue())
+                    .completedPlays(completions)
+                    .completionRate(compRate)
+                    .build());
+        }
+
+        CategoryAnalyticsResponse response = CategoryAnalyticsResponse.builder()
+                .startDate(range.start())
+                .endDate(range.end())
+                .categories(categories)
+                .build();
+
+        putInCache(cacheKey, response);
+        return response;
+    }
+
+    public LanguageAnalyticsResponse getLanguageAnalytics(LocalDate startDate, LocalDate endDate, String timeWindow) {
+        DateRange range = resolveDateRange(startDate, endDate, timeWindow);
+        String cacheKey = "communityott:analytics:manager:languages:" + range.start() + ":" + range.end();
+
+        LanguageAnalyticsResponse cached = getFromCache(cacheKey, LanguageAnalyticsResponse.class);
+        if (cached != null) {
+            return cached;
+        }
+
+        List<Object[]> rows = dailyMetricRepository.findLanguagePerformance(range.start(), range.end());
+        List<LanguageMetricDto> languages = new ArrayList<>();
+
+        for (Object[] r : rows) {
+            long views = ((Number) r[3]).longValue();
+            long completions = ((Number) r[7]).longValue();
+            double compRate = views > 0 ? Math.round(((double) completions / views) * 100.0) / 100.0 : 0.0;
+
+            languages.add(LanguageMetricDto.builder()
+                    .languageId(((Number) r[0]).longValue())
+                    .languageName((String) r[1])
+                    .languageCode((String) r[2])
+                    .totalViews(views)
+                    .totalPlays(((Number) r[4]).longValue())
+                    .uniqueViewers(((Number) r[5]).longValue())
+                    .totalWatchTimeSeconds(((Number) r[6]).longValue())
+                    .completedPlays(completions)
+                    .completionRate(compRate)
+                    .build());
+        }
+
+        LanguageAnalyticsResponse response = LanguageAnalyticsResponse.builder()
+                .startDate(range.start())
+                .endDate(range.end())
+                .languages(languages)
+                .build();
+
+        putInCache(cacheKey, response);
+        return response;
+    }
+
+    public AdminSystemAnalyticsResponse getAdminSystemAnalytics() {
+        String cacheKey = "communityott:analytics:admin:system";
+
+        AdminSystemAnalyticsResponse cached = getFromCache(cacheKey, AdminSystemAnalyticsResponse.class);
+        if (cached != null) {
+            return cached;
+        }
+
+        long registeredUsers = userRepository.count();
+        long activeUsers = userRepository.countByStatus(UserStatus.ACTIVE);
+        long publishedContent = contentRepository.countByStatus(ContentStatus.PUBLISHED);
+        long totalContent = contentRepository.count();
+        long videoAssets = videoAssetRepository.count();
+        long playbackSessions = playbackSessionRepository.count();
+
+        List<Object[]> lifetimeRows = dailyMetricRepository.findLifetimeMetrics();
+        long lifetimePlays = 0;
+        long lifetimeViewers = 0;
+        long lifetimeWatchTime = 0;
+        if (!lifetimeRows.isEmpty()) {
+            Object[] r = lifetimeRows.get(0);
+            lifetimePlays = ((Number) r[0]).longValue();
+            lifetimeViewers = ((Number) r[1]).longValue();
+            lifetimeWatchTime = ((Number) r[2]).longValue();
+        }
+
+        Map<Platform, PlatformMetricDto> platformMap = new EnumMap<>(Platform.class);
+        for (Platform p : Platform.values()) {
+            platformMap.put(p, PlatformMetricDto.builder()
+                    .platform(p)
+                    .sessions(0)
+                    .totalPlays(0)
+                    .uniqueViewers(0)
+                    .totalWatchTimeSeconds(0)
+                    .completionCount(0)
+                    .errors(0)
+                    .bufferEvents(0)
+                    .build());
+        }
+
+        List<Object[]> platformRows = dailyMetricRepository.findPlatformDistribution(LocalDate.of(2000, 1, 1), LocalDate.now(ZoneOffset.UTC));
+        for (Object[] r : platformRows) {
+            Platform p = (Platform) r[0];
+            if (p != null && platformMap.containsKey(p)) {
+                platformMap.put(p, PlatformMetricDto.builder()
+                        .platform(p)
+                        .sessions(((Number) r[1]).longValue())
+                        .totalPlays(((Number) r[2]).longValue())
+                        .uniqueViewers(((Number) r[3]).longValue())
+                        .totalWatchTimeSeconds(((Number) r[4]).longValue())
+                        .completionCount(((Number) r[5]).longValue())
+                        .errors(((Number) r[6]).longValue())
+                        .bufferEvents(((Number) r[7]).longValue())
+                        .build());
+            }
+        }
+
+        AdminSystemAnalyticsResponse response = AdminSystemAnalyticsResponse.builder()
+                .generatedAt(Instant.now())
+                .totalRegisteredUsers(registeredUsers)
+                .totalActiveUsers(activeUsers)
+                .totalPublishedContent(publishedContent)
+                .totalActiveContent(totalContent)
+                .totalVideoAssets(videoAssets)
+                .totalPlaybackSessions(playbackSessions)
+                .lifetimePlays(lifetimePlays)
+                .lifetimeWatchTimeSeconds(lifetimeWatchTime)
+                .lifetimeUniqueViewers(lifetimeViewers)
+                .platformSummary(new ArrayList<>(platformMap.values()))
+                .build();
+
+
+        putInCache(cacheKey, response);
+        return response;
+    }
+
+    public AdminUserAnalyticsResponse getAdminUserAnalytics(LocalDate startDate, LocalDate endDate, String timeWindow) {
+        DateRange range = resolveDateRange(startDate, endDate, timeWindow);
+        String cacheKey = "communityott:analytics:admin:users:" + range.start() + ":" + range.end();
+
+        AdminUserAnalyticsResponse cached = getFromCache(cacheKey, AdminUserAnalyticsResponse.class);
+        if (cached != null) {
+            return cached;
+        }
+
+        long registeredUsers = userRepository.count();
+        long activeUsers = userRepository.countByStatus(UserStatus.ACTIVE);
+
+        List<AnalyticsDailyMetric> metrics = dailyMetricRepository.findByMetricDateBetween(range.start(), range.end());
+        long uniqueViewers = 0;
+        long totalSessions = 0;
+        long totalWatchTime = 0;
+
+        for (AnalyticsDailyMetric m : metrics) {
+            uniqueViewers += m.getUniqueViewers();
+            totalSessions += m.getTotalSessions();
+            totalWatchTime += m.getTotalWatchTimeSeconds();
+        }
+
+        long avgWatchTime = uniqueViewers > 0 ? totalWatchTime / uniqueViewers : 0;
+
+        AdminUserAnalyticsResponse response = AdminUserAnalyticsResponse.builder()
+                .startDate(range.start())
+                .endDate(range.end())
+                .totalRegisteredUsers(registeredUsers)
+                .activeUsers(activeUsers)
+                .activeViewersInPeriod(uniqueViewers)
+                .totalSessionsInPeriod(totalSessions)
+                .totalWatchTimeSecondsInPeriod(totalWatchTime)
+                .averageWatchTimePerViewerSeconds(avgWatchTime)
                 .build();
 
         putInCache(cacheKey, response);
@@ -232,7 +526,6 @@ public class AnalyticsQueryService {
             return cached;
         }
 
-        // Initialize all standard platforms with 0 values
         Map<Platform, PlatformMetricDto> platformMap = new EnumMap<>(Platform.class);
         for (Platform p : Platform.values()) {
             platformMap.put(p, PlatformMetricDto.builder()
@@ -264,7 +557,6 @@ public class AnalyticsQueryService {
             }
         }
 
-        AnalyticsTrendResponse unused; // Keep clean
         PlatformAnalyticsResponse response = PlatformAnalyticsResponse.builder()
                 .startDate(range.start())
                 .endDate(range.end())
