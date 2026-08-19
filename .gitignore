@@ -5,6 +5,7 @@
 # Environment & Secrets (NEVER COMMIT)
 .env
 .env.*
+!.env.example
 .env.local
 *.env
 *.pem
@@ -70,3 +71,19 @@ temp/
 .Spotlight-V100
 .Trashes
 Thumbs.db
+
+# Python & Analytics Service
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/

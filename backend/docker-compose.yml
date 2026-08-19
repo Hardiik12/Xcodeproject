@@ -111,8 +111,43 @@ services:
       exit 0;
       "
 
+  # -----------------------------------------------------------------
+  # 5. Python Analytics Microservice (FastAPI Foundation)
+
+  # Inside Docker: analytics-service:8001
+  # Host: localhost:8001
+  # NOTE: Strictly zero direct database/Redis/MinIO access
+  # -----------------------------------------------------------------
+  analytics-service:
+    build:
+      context: ../analytics-service
+      dockerfile: Dockerfile
+    container_name: communityott-analytics
+    restart: unless-stopped
+    ports:
+      - "${ANALYTICS_PORT:-8001}:8001"
+    environment:
+      APP_NAME: communityott-analytics
+      APP_VERSION: 1.0.0
+      ENVIRONMENT: local
+      LOG_LEVEL: INFO
+      HOST: 0.0.0.0
+      PORT: 8001
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:8080
+      SPRING_BOOT_BASE_URL: http://host.docker.internal:8080
+      ANALYTICS_CONTRACT_VERSION: analytics-contract-v1
+    networks:
+      - communityott-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8001/api/v1/analytics/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
 # ===================================================================
 # Dedicated Internal Bridge Network
+
 # Container-to-container communication MUST use service names:
 #   postgres:5432
 #   redis:6379
