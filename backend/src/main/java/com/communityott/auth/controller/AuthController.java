@@ -64,4 +64,54 @@ public class AuthController {
         AuthenticationResponse response = authenticationService.verifyOtpAndAuthenticate(request, ipAddress, userAgent);
         return ResponseEntity.ok(ApiResponse.success(response, "Authentication successful"));
     }
+
+    @PostMapping("/refresh")
+    @Operation(summary = "Refresh Authentication Tokens", description = "Exchanges a valid active refresh token for a new short-lived JWT access token and rotated refresh token.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Token refreshed successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Missing or invalid refresh token request format"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid, expired, revoked, or reused refresh token")
+    })
+    public ResponseEntity<ApiResponse<AuthenticationResponse>> refresh(
+            @Valid @RequestBody com.communityott.auth.dto.RefreshTokenRequestDto request,
+            HttpServletRequest httpRequest
+    ) {
+        String ipAddress = httpRequest.getRemoteAddr();
+        String userAgent = httpRequest.getHeader("User-Agent");
+
+        AuthenticationResponse response = authenticationService.refreshTokens(request, ipAddress, userAgent);
+        return ResponseEntity.ok(ApiResponse.success(response, "Token refreshed successfully"));
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "Logout & Revoke Current Session", description = "Revokes the active device session and invalidates the associated refresh token state.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Logged out successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthenticated request")
+    })
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.communityott.common.security.CommunityOttPrincipal principal
+    ) {
+        if (principal == null || principal.getUserId() == null) {
+            throw new org.springframework.security.authentication.BadCredentialsException("Unauthenticated request");
+        }
+        authenticationService.logout(principal.getUserId(), principal.getSessionId());
+        return ResponseEntity.ok(ApiResponse.success(null, "Logout successful"));
+    }
+
+    @PostMapping("/logout-all")
+    @Operation(summary = "Logout All Active Sessions", description = "Revokes all active device sessions belonging to the authenticated user account.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "All active sessions logged out successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthenticated request")
+    })
+    public ResponseEntity<ApiResponse<Void>> logoutAll(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.communityott.common.security.CommunityOttPrincipal principal
+    ) {
+        if (principal == null || principal.getUserId() == null) {
+            throw new org.springframework.security.authentication.BadCredentialsException("Unauthenticated request");
+        }
+        authenticationService.logoutAll(principal.getUserId());
+        return ResponseEntity.ok(ApiResponse.success(null, "All active sessions logged out successfully"));
+    }
 }

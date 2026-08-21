@@ -381,6 +381,7 @@ public class AuthenticationFlowTest {
                 .identifier(email)
                 .otp("000000")
                 .purpose(OtpPurpose.LOGIN)
+                .deviceId("wrong-otp-device-uid")
                 .build();
 
         mockMvc.perform(post("/api/v1/auth/otp/verify")
@@ -472,6 +473,7 @@ public class AuthenticationFlowTest {
                 .identifier(email)
                 .otp(otp)
                 .purpose(OtpPurpose.ACCOUNT_RECOVERY)
+                .deviceId("recovery-web-device-uid")
                 .platform(Platform.WEB)
                 .build();
 

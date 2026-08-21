@@ -50,6 +50,36 @@ class Settings(BaseSettings):
         default=None,
         description="Optional Bearer token or Dev user token for local development integration testing",
     )
+    MODEL_ARTIFACT_DIR: str = Field(
+        default="artifacts/models",
+        description="Root directory for versioned ML model artifacts and registry manifest",
+    )
+
+    # Phase 7.4 Analytics Heuristic Thresholds
+    HIGH_BUFFERING_RATE_THRESHOLD: float = Field(
+        default=0.05,
+        description="Buffering rate threshold above which HIGH_BUFFERING insight triggers (5%)",
+    )
+    HIGH_ERROR_RATE_THRESHOLD: float = Field(
+        default=0.02,
+        description="Playback error rate threshold above which HIGH_ERROR_RATE insight triggers (2%)",
+    )
+    LOW_COMPLETION_RATE_THRESHOLD: float = Field(
+        default=0.30,
+        description="Completion rate threshold below which LOW_COMPLETION insight triggers (30%)",
+    )
+    HIGH_ENGAGEMENT_COMPLETION_THRESHOLD: float = Field(
+        default=0.70,
+        description="Completion rate threshold above which HIGH_ENGAGEMENT insight triggers (70%)",
+    )
+    GROWTH_ALERT_THRESHOLD: float = Field(
+        default=25.0,
+        description="Period-over-period growth percentage threshold for RAPID_GROWTH insight (25%)",
+    )
+    DECLINING_CONTENT_THRESHOLD: float = Field(
+        default=-20.0,
+        description="Period-over-period growth percentage threshold for DECLINING_CONTENT insight (-20%)",
+    )
 
     @property
     def cors_origins(self) -> List[str]:

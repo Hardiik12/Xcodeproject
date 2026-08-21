@@ -29,6 +29,7 @@ public class CommunityOttPrincipal implements Principal, Serializable {
     private final Long userId;
     private final String email;
     private final String displayName;
+    private final Long sessionId;
 
     @Override
     public String getName() {

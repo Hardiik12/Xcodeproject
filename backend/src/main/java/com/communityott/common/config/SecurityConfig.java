@@ -39,6 +39,7 @@ public class SecurityConfig {
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
     private final CustomAccessDeniedHandler accessDeniedHandler;
     private final UserRepository userRepository;
+    private final com.communityott.auth.repository.AuthSessionRepository authSessionRepository;
     private final Environment environment;
     private final com.communityott.auth.security.JwtTokenService jwtTokenService;
 
@@ -107,7 +108,7 @@ public class SecurityConfig {
                  * 2. DevAuthenticationFilter evaluates X-Dev-User-Id fallback only when devAuthEnabled=true and active profile is local/dev/test.
                  */
                 .addFilterBefore(
-                        new com.communityott.auth.security.JwtAuthenticationFilter(jwtTokenService, userRepository),
+                        new com.communityott.auth.security.JwtAuthenticationFilter(jwtTokenService, userRepository, authSessionRepository),
                         UsernamePasswordAuthenticationFilter.class
                 )
                 .addFilterBefore(

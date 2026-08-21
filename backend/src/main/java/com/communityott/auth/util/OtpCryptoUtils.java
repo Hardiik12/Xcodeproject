@@ -21,6 +21,17 @@ public final class OtpCryptoUtils {
     }
 
     /**
+     * Generates a 64-byte (512-bit) cryptographically secure random refresh token string encoded in URL-safe Base64 without padding.
+     *
+     * @return cryptographically random refresh token string
+     */
+    public static String generateRefreshToken() {
+        byte[] randomBytes = new byte[64];
+        SECURE_RANDOM.nextBytes(randomBytes);
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+    }
+
+    /**
      * Generates an independently unpredictable numeric OTP string of the given length.
      *
      * @param length the number of digits (e.g. 6)

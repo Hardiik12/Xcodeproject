@@ -1,5 +1,7 @@
 package com.communityott.auth.security;
 
+import com.communityott.auth.entity.AuthSession;
+import com.communityott.auth.repository.AuthSessionRepository;
 import com.communityott.common.security.CommunityOttPrincipal;
 import com.communityott.user.entity.User;
 import com.communityott.user.entity.UserStatus;
@@ -8,7 +10,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -22,18 +23,9 @@ import java.util.Optional;
 
 /**
  * Spring Security filter that extracts and validates Bearer JWT access tokens from the
- * Authorization header.
- *
- * <p>When a valid JWT token is found:
- * <ol>
- *   <li>The token signature, expiration, issuer, and audience are verified.</li>
- *   <li>The user account is loaded and status verified (must be ACTIVE).</li>
- *   <li>A {@link CommunityOttPrincipal} is instantiated and placed in {@link SecurityContextHolder}.</li>
- * </ol>
- * </p>
+ * Authorization header and verifies active session state.
  */
 @Slf4j
-@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     public static final String AUTHORIZATION_HEADER = "Authorization";
@@ -41,6 +33,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenService jwtTokenService;
     private final UserRepository userRepository;
+    private final AuthSessionRepository authSessionRepository;
+
+    public JwtAuthenticationFilter(JwtTokenService jwtTokenService, UserRepository userRepository) {
+        this.jwtTokenService = jwtTokenService;
+        this.userRepository = userRepository;
+        this.authSessionRepository = null;
+    }
+
+    public JwtAuthenticationFilter(JwtTokenService jwtTokenService,
+                                   UserRepository userRepository,
+                                   AuthSessionRepository authSessionRepository) {
+        this.jwtTokenService = jwtTokenService;
+        this.userRepository = userRepository;
+        this.authSessionRepository = authSessionRepository;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -61,21 +68,47 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                     if (user != null) {
                         if (user.getStatus() == UserStatus.ACTIVE) {
-                            CommunityOttPrincipal principal = CommunityOttPrincipal.builder()
-                                    .userId(user.getId())
-                                    .email(user.getEmail())
-                                    .displayName(user.getDisplayName())
-                                    .build();
+                            Optional<Long> sidOpt = jwtTokenService.extractSessionId(token);
+                            boolean sessionValid = true;
+                            Long sessionId = sidOpt.orElse(null);
 
-                            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                                    principal,
-                                    null,
-                                    List.of(new SimpleGrantedAuthority("ROLE_USER"))
-                            );
-                            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                            if (sidOpt.isPresent() && authSessionRepository != null) {
+                                Long sid = sidOpt.get();
+                                Optional<AuthSession> sessionOpt = authSessionRepository.findById(sid);
 
-                            SecurityContextHolder.getContext().setAuthentication(authToken);
-                            log.debug("JWT: Successfully authenticated user ID [{}] via Bearer token", userId);
+                                if (sessionOpt.isEmpty()) {
+                                    log.warn("JWT: Authentication rejected - Session [{}] does not exist", sid);
+                                    sessionValid = false;
+                                } else {
+                                    AuthSession session = sessionOpt.get();
+                                    if (!session.getUser().getId().equals(userId)) {
+                                        log.warn("JWT: Authentication rejected - Session [{}] does not belong to user [{}]", sid, userId);
+                                        sessionValid = false;
+                                    } else if (!session.isActive()) {
+                                        log.warn("JWT: Authentication rejected - Session [{}] is revoked or expired", sid);
+                                        sessionValid = false;
+                                    }
+                                }
+                            }
+
+                            if (sessionValid) {
+                                CommunityOttPrincipal principal = CommunityOttPrincipal.builder()
+                                        .userId(user.getId())
+                                        .email(user.getEmail())
+                                        .displayName(user.getDisplayName())
+                                        .sessionId(sessionId)
+                                        .build();
+
+                                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                        principal,
+                                        null,
+                                        List.of(new SimpleGrantedAuthority("ROLE_USER"))
+                                );
+                                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                                SecurityContextHolder.getContext().setAuthentication(authToken);
+                                log.debug("JWT: Successfully authenticated user ID [{}] via Bearer token", userId);
+                            }
                         } else {
                             log.warn("JWT: Authentication rejected for user ID [{}] due to inactive status [{}]", userId, user.getStatus());
                         }

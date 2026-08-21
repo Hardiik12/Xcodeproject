@@ -38,6 +38,17 @@ public class JwtTokenService {
      * @return signed JWT token string
      */
     public String generateAccessToken(User user) {
+        return generateAccessToken(user, null);
+    }
+
+    /**
+     * Generates a cryptographically signed, short-lived JWT Access Token for the specified User and Session.
+     *
+     * @param user authenticated User entity
+     * @param sessionId active AuthSession ID
+     * @return signed JWT token string
+     */
+    public String generateAccessToken(User user, Long sessionId) {
         if (user == null || user.getId() == null) {
             throw new IllegalArgumentException("User and user ID must not be null for JWT generation");
         }
@@ -46,16 +57,20 @@ public class JwtTokenService {
         Instant expiresAt = now.plusSeconds(jwtProperties.getAccessTokenTtlSeconds());
         String jti = UUID.randomUUID().toString();
 
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(String.valueOf(user.getId()))
                 .issuer(jwtProperties.getIssuer())
                 .audience().add(jwtProperties.getAudience()).and()
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiresAt))
                 .id(jti)
-                .claim("userId", user.getId())
-                .signWith(getSigningKey())
-                .compact();
+                .claim("userId", user.getId());
+
+        if (sessionId != null) {
+            builder.claim("sid", sessionId);
+        }
+
+        return builder.signWith(getSigningKey()).compact();
     }
 
     /**
@@ -123,6 +138,27 @@ public class JwtTokenService {
         } catch (Exception e) {
             return Optional.empty();
         }
+    }
+
+    /**
+     * Safely extracts the active Session ID (sid) from a valid JWT.
+     *
+     * @param token JWT string
+     * @return Optional containing Session ID if present
+     */
+    public Optional<Long> extractSessionId(String token) {
+        try {
+            Claims claims = validateAndExtractClaims(token);
+            Object sidClaim = claims.get("sid");
+            if (sidClaim instanceof Number number) {
+                return Optional.of(number.longValue());
+            } else if (sidClaim instanceof String str && !str.isBlank()) {
+                return Optional.of(Long.parseLong(str));
+            }
+        } catch (Exception e) {
+            log.trace("Could not extract sid from JWT token: {}", e.getMessage());
+        }
+        return Optional.empty();
     }
 
     /**

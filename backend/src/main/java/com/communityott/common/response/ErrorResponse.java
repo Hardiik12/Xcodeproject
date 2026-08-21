@@ -30,7 +30,7 @@ public class ErrorResponse {
     public static class ErrorDetails {
         private String code;
         private String message;
-        private Map<String, String> details;
+        private Object details;
     }
 
     public static ErrorResponse of(String code, String message) {
@@ -44,7 +44,7 @@ public class ErrorResponse {
                 .build();
     }
 
-    public static ErrorResponse of(String code, String message, Map<String, String> details) {
+    public static ErrorResponse of(String code, String message, Object details) {
         return ErrorResponse.builder()
                 .success(false)
                 .error(ErrorDetails.builder()

@@ -15,6 +15,8 @@ public interface AuthSessionRepository extends JpaRepository<AuthSession, Long> 
 
     Optional<AuthSession> findByRefreshTokenHash(String refreshTokenHash);
 
+    Optional<AuthSession> findByPreviousRefreshTokenHash(String previousRefreshTokenHash);
+
     List<AuthSession> findByUserId(Long userId);
 
     @Query("SELECT s FROM AuthSession s WHERE s.user.id = :userId AND s.revokedAt IS NULL AND s.expiresAt > :now ORDER BY s.lastUsedAt DESC")
@@ -26,6 +28,8 @@ public interface AuthSessionRepository extends JpaRepository<AuthSession, Long> 
                                                                  @Param("now") Instant now);
 
     Optional<AuthSession> findByIdAndUserId(Long id, Long userId);
+
+    List<AuthSession> findAllByDeviceEntityIdAndRevokedAtIsNull(Long deviceEntityId);
 
     @Query("SELECT COUNT(s) FROM AuthSession s WHERE s.user.id = :userId AND s.revokedAt IS NULL AND s.expiresAt > :now")
     long countActiveSessions(@Param("userId") Long userId, @Param("now") Instant now);

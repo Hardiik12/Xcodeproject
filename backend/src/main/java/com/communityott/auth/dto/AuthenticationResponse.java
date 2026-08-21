@@ -21,6 +21,9 @@ public class AuthenticationResponse {
     @Schema(description = "Short-lived JWT access token for API authorization", example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
     private String accessToken;
 
+    @Schema(description = "Cryptographically secure refresh token for token rotation", example = "dGhpcyBpcyBhIHJlYWwgcmVmcmVzaCB0b2tlbg...")
+    private String refreshToken;
+
     @Schema(description = "Type of authorization token", example = "Bearer")
     @Builder.Default
     private String tokenType = "Bearer";

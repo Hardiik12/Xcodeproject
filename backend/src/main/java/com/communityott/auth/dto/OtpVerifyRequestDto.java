@@ -42,6 +42,18 @@ public class OtpVerifyRequestDto {
     @Schema(description = "Human readable device name", example = "Hardik's iPhone")
     private String deviceName;
 
-    @Schema(description = "Client platform (IOS, ANDROID, or WEB)", example = "IOS")
+    @Schema(description = "Client platform (IOS, ANDROID, WEB, TV, TABLET)", example = "IOS")
     private Platform platform;
+
+    @Schema(description = "Device hardware model", example = "iPhone 15 Pro")
+    private String deviceModel;
+
+    @Schema(description = "Operating system version", example = "iOS 17.4")
+    private String osVersion;
+
+    @Schema(description = "Application software version", example = "1.4.0")
+    private String appVersion;
+
+    @Schema(description = "Optional ID of an existing active device to revoke during device swap", example = "101")
+    private Long replaceDeviceId;
 }

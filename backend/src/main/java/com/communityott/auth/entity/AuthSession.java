@@ -50,6 +50,10 @@ public class AuthSession {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "device_entity_id")
+    private com.communityott.device.entity.Device deviceEntity;
+
     @Column(name = "device_id", nullable = false, length = 255)
     private String deviceId;
 
@@ -62,6 +66,9 @@ public class AuthSession {
 
     @Column(name = "refresh_token_hash", nullable = false, length = 255)
     private String refreshTokenHash;
+
+    @Column(name = "previous_refresh_token_hash", length = 255)
+    private String previousRefreshTokenHash;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

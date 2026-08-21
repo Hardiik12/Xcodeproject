@@ -16,6 +16,13 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(MaxDevicesReachedException.class)
+    public ResponseEntity<ErrorResponse> handleMaxDevicesReachedException(MaxDevicesReachedException ex) {
+        log.warn("Max Devices Reached: {}", ex.getMessage());
+        ErrorResponse response = ErrorResponse.of(ex.getCode(), ex.getMessage(), Map.of("activeDevices", ex.getActiveDevices()));
+        return new ResponseEntity<>(response, ex.getStatus());
+    }
+
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ErrorResponse> handleApiException(ApiException ex) {
         log.error("API Exception: [{}] {}", ex.getCode(), ex.getMessage());
